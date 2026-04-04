@@ -1,0 +1,79 @@
+════════════════════════════════════════════════════════════
+   QUICK FIX - Create Database Table (30 seconds)
+════════════════════════════════════════════════════════════
+
+ERROR: Table 'kv_store_e9dccf07' not found
+
+SOLUTION:
+--------
+
+1. OPEN THIS URL:
+   https://supabase.com/dashboard/project/awmgkhticthegwazfkoq/sql
+
+2. PASTE THIS SQL:
+   
+   CREATE TABLE IF NOT EXISTS public.kv_store_e9dccf07 (
+     key TEXT NOT NULL PRIMARY KEY,
+     value JSONB NOT NULL
+   );
+
+3. CLICK "RUN" BUTTON (green button in Supabase)
+
+4. REFRESH YOUR APP
+
+════════════════════════════════════════════════════════════
+
+STEP BY STEP:
+
+1. Copy the SQL above (the CREATE TABLE... line)
+
+2. Click this link to open Supabase:
+   https://supabase.com/dashboard/project/awmgkhticthegwazfkoq/sql
+   
+3. In Supabase:
+   - You'll see a SQL editor
+   - Paste the SQL you copied
+   - Click the green "RUN" button
+   - You should see "Success. No rows returned"
+
+4. Return to your app and refresh the page (F5)
+
+5. Done! The app should now work.
+
+════════════════════════════════════════════════════════════
+
+WHY IS THIS NEEDED?
+
+Your Supabase project is empty (no tables yet). The app needs
+a table called 'kv_store_e9dccf07' to store:
+- Products
+- Categories  
+- Orders
+
+This is a one-time setup. After creating the table, you never
+need to do this again.
+
+════════════════════════════════════════════════════════════
+
+TROUBLESHOOTING:
+
+Problem: "Can't find SQL Editor"
+Solution: Look for "SQL Editor" in the left sidebar of Supabase
+
+Problem: "Permission denied"
+Solution: Make sure you're logged into the correct Supabase account
+
+Problem: "Table already exists"
+Solution: That's okay! Just refresh your app.
+
+Problem: Still getting errors
+Solution: 
+  1. Make sure SQL ran successfully (check for success message)
+  2. Refresh your browser (F5)
+  3. Clear cache if needed (Ctrl+Shift+R)
+
+════════════════════════════════════════════════════════════
+
+DIRECT LINK: https://supabase.com/dashboard/project/awmgkhticthegwazfkoq/sql
+
+════════════════════════════════════════════════════════════
