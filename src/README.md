@@ -1,7 +1,7 @@
 # Living in Style - E-Commerce Platform
 
 **Domain:** vivereinstyle.com  
-**Location:** Melbourne VIC 3000, Australia  
+**Location:** Lonsdale SA 5160, Australia  
 **Backend:** Supabase Cloud ☁️
 
 Premium furniture retailer built with React, TanStack Query, Zustand, and **Supabase backend**. Features a complete e-commerce experience with cloud storage and admin panel.
@@ -441,7 +441,7 @@ Your backend is already deployed on Supabase!
 
 **Living in Style**
 - **Domain:** vivereinstyle.com
-- **Location:** Melbourne VIC 3000, Australia
+- **Location:** Lonsdale SA 5160, Australia
 - **Email:** hello@vivereinstyle.com
 
 ### Value Propositions

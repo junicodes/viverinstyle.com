@@ -126,7 +126,7 @@ CVC: 123
 **Company Name:** Vivere In Style  
 **Tagline:** La dolce vita (The sweet life)  
 **Website:** vivereinstyle.com  
-**Location:** Adelaide SA 5000, Australia  
+**Location:** Lonsdale SA 5160, Australia  
 
 **Color Palette:**
 - Emerald (#10b981)
@@ -323,8 +323,8 @@ To enable live payments:
 ## 📞 CONTACT & SUPPORT
 
 **Email:** hello@vivereinstyle.com  
-**Phone:** 1300 123 456  
-**Address:** 123 Furniture Lane, Adelaide SA 5000  
+**Phone:** 0424 023 996  
+**Address:** 8/105 O'Sullivan Road, Lonsdale SA 5160  
 
 **Business Hours:**
 - Mon-Fri: 9:00 AM - 6:00 PM

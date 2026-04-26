@@ -25,7 +25,7 @@ const faqs = [
   },
   {
     question: 'Do you have a showroom I can visit?',
-    answer: 'Yes! Our Adelaide showroom is located at 123 Furniture Lane, Adelaide SA 5000. We\'re open Monday-Friday 9am-6pm, Saturday 10am-5pm, and Sunday 11am-4pm. Come experience our furniture in person!',
+    answer: 'Yes! Our Adelaide showroom is located at 8/105 O\'Sullivan Road, Lonsdale SA 5160. We\'re open Monday-Friday 9am-6pm, Saturday 10am-5pm, and Sunday 11am-4pm. Come experience our furniture in person!',
   },
   {
     question: 'What payment methods do you accept?',

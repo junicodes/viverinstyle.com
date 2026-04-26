@@ -193,7 +193,7 @@ To enable emails, add your Resend API key to Supabase environment variables.
 │ 4. Enjoy your furniture!        │
 ├─────────────────────────────────┤
 │ Support: support@vivereinstyle  │
-│ Phone: 1300 123 456             │
+│ Phone: 0424 023 996             │
 └─────────────────────────────────┘
 ```
 

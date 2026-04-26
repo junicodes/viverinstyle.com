@@ -1,14 +1,8 @@
-import { Header } from '../Header';
-import { Footer } from '../Footer';
-import { Cart } from '../Cart';
 import { ArrowLeft, Truck, MapPin, Clock, Package } from 'lucide-react';
 
 export function ShippingDeliveryPage() {
   return (
     <div className="min-h-screen bg-white">
-      <Header />
-      <Cart />
-
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <a
           href="/"
@@ -226,7 +220,7 @@ export function ShippingDeliveryPage() {
           <section>
             <h2 className="text-2xl mb-4">Tracking Your Order</h2>
             <p className="text-gray-600 leading-relaxed">
-              Once your order ships, you'll receive a tracking number via email. You can track your delivery in real-time through our carrier's website. If you have questions about your delivery, contact our customer service team at 1300 123 456.
+              Once your order ships, you'll receive a tracking number via email. You can track your delivery in real-time through our carrier's website. If you have questions about your delivery, contact our customer service team at 0424 023 996.
             </p>
           </section>
 
@@ -237,14 +231,12 @@ export function ShippingDeliveryPage() {
             </p>
             <div className="space-y-2 text-gray-600">
               <p><strong>Email:</strong> delivery@vivereinstyle.com</p>
-              <p><strong>Phone:</strong> 1300 123 456</p>
+              <p><strong>Phone:</strong> 0424 023 996</p>
               <p><strong>Hours:</strong> Monday-Friday 9am-6pm ACST</p>
             </div>
           </section>
         </div>
       </div>
-
-      <Footer />
     </div>
   );
 }

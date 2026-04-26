@@ -59,10 +59,13 @@ export default function AddProductForm({ categories, product, onSuccess, onCance
     category: '',
     stock: '1',
     featured: false,
+    shippingCost: '',
     width: '',
     height: '',
     depth: '',
     material: '',
+    videoUrl: '',
+    materialVariants: '',
   });
 
   // Initialize form with product data if editing
@@ -80,10 +83,13 @@ export default function AddProductForm({ categories, product, onSuccess, onCance
         category: product.category || '',
         stock: product.stock?.toString() || '',
         featured: product.featured || false,
+        shippingCost: product.shippingCost?.toString() ?? '',
         width: dims[0] || '',
         height: dims[1] || '',
         depth: dims[2] || '',
         material: product.material || '',
+        videoUrl: product.videoUrl || '',
+        materialVariants: Array.isArray(product.materialVariants) ? product.materialVariants.join(', ') : (product.materialVariants || ''),
       });
 
       // Set images
@@ -274,6 +280,9 @@ export default function AddProductForm({ categories, product, onSuccess, onCance
         dimensions: dimensions || undefined,
         rating: product?.rating ?? 4.5 + Math.random() * 0.4,
         reviews: product?.reviews ?? 0,
+        shippingCost: formData.shippingCost !== '' ? parseFloat(formData.shippingCost) : undefined,
+        videoUrl: formData.videoUrl || undefined,
+        materialVariants: formData.materialVariants ? formData.materialVariants.split(',').map(v => v.trim()).filter(Boolean) : undefined,
       };
 
       const url = isEditMode
@@ -473,6 +482,23 @@ export default function AddProductForm({ categories, product, onSuccess, onCance
                 />
               </div>
 
+              <div>
+                <Label htmlFor="shippingCost" className="text-gray-700 dark:text-gray-300 mb-2 block">
+                  Shipping Cost (AUD)
+                  <span className="text-xs text-gray-500 ml-2 font-normal">(0 = free, blank = use default)</span>
+                </Label>
+                <Input
+                  id="shippingCost"
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={formData.shippingCost}
+                  onChange={(e) => setFormData({ ...formData, shippingCost: e.target.value })}
+                  placeholder="Leave blank for default rate"
+                  className="bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-gray-900 dark:focus:border-white"
+                />
+              </div>
+
               <div className="col-span-2">
                 <label className="flex items-center gap-3 cursor-pointer">
                   <input
@@ -483,6 +509,34 @@ export default function AddProductForm({ categories, product, onSuccess, onCance
                   />
                   <span className="text-gray-700 dark:text-gray-300">Feature this product on homepage</span>
                 </label>
+              </div>
+
+              <div>
+                <Label htmlFor="materialVariants" className="text-gray-700 dark:text-gray-300 mb-2 block">
+                  Material / Stone Variants
+                  <span className="text-xs text-gray-500 ml-2 font-normal">(comma-separated, e.g., Marble, Oak, Walnut)</span>
+                </Label>
+                <Input
+                  id="materialVariants"
+                  value={formData.materialVariants}
+                  onChange={(e) => setFormData({ ...formData, materialVariants: e.target.value })}
+                  placeholder="e.g., Cream Travertine, Rosa Levanto, Calacatta Nero"
+                  className="bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-gray-900 dark:focus:border-white"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="videoUrl" className="text-gray-700 dark:text-gray-300 mb-2 block">
+                  Product Video URL
+                  <span className="text-xs text-gray-500 ml-2 font-normal">(YouTube, Vimeo, or direct MP4 link)</span>
+                </Label>
+                <Input
+                  id="videoUrl"
+                  value={formData.videoUrl}
+                  onChange={(e) => setFormData({ ...formData, videoUrl: e.target.value })}
+                  placeholder="https://www.youtube.com/watch?v=... or https://example.com/video.mp4"
+                  className="bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-gray-900 dark:focus:border-white"
+                />
               </div>
             </div>
           </div>

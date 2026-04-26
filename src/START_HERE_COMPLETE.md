@@ -399,8 +399,8 @@ Google authentication is implemented but requires configuration:
 - ✅ Expert support
 
 ### Company Info
-- **Location:** Adelaide SA 5000, Australia
-- **Phone:** 1300 123 456
+- **Location:** Lonsdale SA 5160, Australia
+- **Phone:** 0424 023 996
 - **Email:** hello@vivereinstyle.com
 - **ABN:** 12 345 678 901
 
@@ -440,9 +440,9 @@ Google authentication is implemented but requires configuration:
 Need help? We're here!
 
 - **Email:** hello@vivereinstyle.com
-- **Phone:** 1300 123 456
+- **Phone:** 0424 023 996
 - **Hours:** Mon-Fri 9AM-6PM, Sat 10AM-5PM, Sun 11AM-4PM
-- **Location:** 123 Furniture Lane, Adelaide SA 5000
+- **Location:** 8/105 O'Sullivan Road, Lonsdale SA 5160
 
 ---
 

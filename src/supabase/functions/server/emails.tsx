@@ -139,7 +139,7 @@ export function generateInvoiceEmail(order: any) {
         <p style="margin: 0 0 10px 0; color: #666; font-size: 14px;">Need help? We're here for you!</p>
         <p style="margin: 5px 0; color: #666; font-size: 14px;">
           📧 <a href="mailto:support@vivereinstyle.com" style="color: #3b82f6; text-decoration: none;">support@vivereinstyle.com</a><br>
-          📞 1300 123 456<br>
+          📞 0424 023 996<br>
           💬 Live chat available on our website
         </p>
       </div>
@@ -148,7 +148,7 @@ export function generateInvoiceEmail(order: any) {
     <!-- Footer -->
     <div style="background-color: #1a1a1a; color: #ffffff; padding: 30px; text-align: center;">
       <p style="margin: 0 0 15px 0; font-size: 18px; font-weight: 600;">Vivere In Style</p>
-      <p style="margin: 0 0 10px 0; color: #999; font-size: 14px;">123 Furniture Lane, Adelaide SA 5000, Australia</p>
+      <p style="margin: 0 0 10px 0; color: #999; font-size: 14px;">8/105 O'Sullivan Road, Lonsdale SA 5160, Australia</p>
       <p style="margin: 0 0 15px 0; color: #999; font-size: 14px;">www.vivereinstyle.com</p>
       
       <div style="margin: 20px 0;">
@@ -218,7 +218,7 @@ export function generateVerificationEmail(code: string, name?: string) {
     <!-- Footer -->
     <div style="background-color: #1a1a1a; color: #ffffff; padding: 30px; text-align: center;">
       <p style="margin: 0 0 15px 0; font-size: 18px; font-weight: 600;">Vivere In Style</p>
-      <p style="margin: 0 0 10px 0; color: #999; font-size: 14px;">123 Furniture Lane, Adelaide SA 5000, Australia</p>
+      <p style="margin: 0 0 10px 0; color: #999; font-size: 14px;">8/105 O'Sullivan Road, Lonsdale SA 5160, Australia</p>
       <p style="margin: 0 0 15px 0; color: #999; font-size: 14px;">www.vivereinstyle.com</p>
       <p style="margin: 15px 0 0 0; color: #666; font-size: 12px;">
         © 2025 Vivere In Style. All rights reserved.
@@ -285,7 +285,7 @@ export function generatePasswordResetEmail(code: string, name?: string) {
     <!-- Footer -->
     <div style="background-color: #1a1a1a; color: #ffffff; padding: 30px; text-align: center;">
       <p style="margin: 0 0 15px 0; font-size: 18px; font-weight: 600;">Vivere In Style</p>
-      <p style="margin: 0 0 10px 0; color: #999; font-size: 14px;">123 Furniture Lane, Adelaide SA 5000, Australia</p>
+      <p style="margin: 0 0 10px 0; color: #999; font-size: 14px;">8/105 O'Sullivan Road, Lonsdale SA 5160, Australia</p>
       <p style="margin: 0 0 15px 0; color: #999; font-size: 14px;">
         📧 <a href="mailto:support@vivereinstyle.com" style="color: #999; text-decoration: none;">support@vivereinstyle.com</a>
       </p>

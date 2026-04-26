@@ -1,14 +1,8 @@
-import { Header } from '../Header';
-import { Footer } from '../Footer';
-import { Cart } from '../Cart';
 import { ArrowLeft, Package, Clock, CreditCard, CheckCircle } from 'lucide-react';
 
 export function ReturnsRefundsPage() {
   return (
     <div className="min-h-screen bg-white">
-      <Header />
-      <Cart />
-
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <a
           href="/"
@@ -73,7 +67,7 @@ export function ReturnsRefundsPage() {
                 <div>
                   <h3 className="text-lg mb-2">Contact Us</h3>
                   <p className="text-gray-600">
-                    Email us at returns@vivereinstyle.com or call 1300 123 456. Provide your order number and reason for return.
+                    Email us at returns@vivereinstyle.com or call 0424 023 996. Provide your order number and reason for return.
                   </p>
                 </div>
               </div>
@@ -180,14 +174,12 @@ export function ReturnsRefundsPage() {
             </p>
             <div className="space-y-2 text-gray-600">
               <p><strong>Email:</strong> returns@vivereinstyle.com</p>
-              <p><strong>Phone:</strong> 1300 123 456</p>
+              <p><strong>Phone:</strong> 0424 023 996</p>
               <p><strong>Hours:</strong> Monday-Friday 9am-6pm ACST</p>
             </div>
           </section>
         </div>
       </div>
-
-      <Footer />
     </div>
   );
 }

@@ -1,8 +1,6 @@
 import { motion } from 'motion/react';
 import { ArrowLeft, Sparkles, Heart, Home } from 'lucide-react';
 import { Button } from '../ui/button';
-import { Header } from '../Header';
-import { Footer } from '../Footer';
 
 interface BrandStoryPageProps {
   onBack?: () => void;
@@ -11,8 +9,6 @@ interface BrandStoryPageProps {
 export function BrandStoryPage({ onBack }: BrandStoryPageProps) {
   return (
     <div className="min-h-screen bg-white dark:bg-black">
-      <Header onNavigate={() => {}} onCategoryClick={() => {}} onProductClick={() => {}} />
-      
       {/* Hero Section */}
       <section className="relative h-[60vh] min-h-[500px] overflow-hidden">
         <div className="absolute inset-0">
@@ -261,8 +257,6 @@ export function BrandStoryPage({ onBack }: BrandStoryPageProps) {
           </motion.div>
         </div>
       </section>
-
-      <Footer />
     </div>
   );
 }

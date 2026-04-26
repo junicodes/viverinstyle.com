@@ -45,6 +45,7 @@ interface ProductDetailPageProps {
 
 export function ProductDetailPage({ product, allProducts = [], onBack, onProductClick }: ProductDetailPageProps) {
   const [selectedImage, setSelectedImage] = useState(0);
+  const [selectedVariant, setSelectedVariant] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
@@ -251,16 +252,120 @@ export function ProductDetailPage({ product, allProducts = [], onBack, onProduct
             )}
 
             {/* Price */}
-            <div className="mb-8">
+            <div className="mb-6">
               <p className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
                 ${product.price.toLocaleString()}
               </p>
             </div>
 
+            {/* Material Variants */}
+            {product.materialVariants && product.materialVariants.length > 0 && (() => {
+              const MATERIAL_SWATCHES: Record<string, { color: string; gradient?: string }> = {
+                marble: { color: '#e8e0d8', gradient: 'linear-gradient(135deg, #e8e0d8 0%, #d4c5b5 50%, #f0ebe5 100%)' },
+                travertine: { color: '#d4c5a9', gradient: 'linear-gradient(135deg, #d4c5a9 0%, #c9b896 50%, #e2d6c0 100%)' },
+                'cream travertine': { color: '#d4c5a9', gradient: 'linear-gradient(135deg, #e8dcc8 0%, #d4c5a9 50%, #f0e8d8 100%)' },
+                'rosa levanto': { color: '#9e5a5a', gradient: 'linear-gradient(135deg, #9e5a5a 0%, #c47272 50%, #7a4040 100%)' },
+                'calacatta nero': { color: '#2a2a2a', gradient: 'linear-gradient(135deg, #1a1a1a 0%, #3a3a3a 40%, #f5f5f5 41%, #3a3a3a 42%, #2a2a2a 100%)' },
+                'calacatta viola': { color: '#d8c8d8', gradient: 'linear-gradient(135deg, #e8d8e8 0%, #c0a8c0 50%, #f0e0f0 100%)' },
+                'desert rose': { color: '#c4917a', gradient: 'linear-gradient(135deg, #c4917a 0%, #d4a08a 50%, #b4816a 100%)' },
+                chocolate: { color: '#4a3428', gradient: 'linear-gradient(135deg, #4a3428 0%, #6a4a38 50%, #3a2418 100%)' },
+                honeycomb: { color: '#c8a84a', gradient: 'linear-gradient(135deg, #c8a84a 0%, #d8b85a 50%, #b8983a 100%)' },
+                'green onyx': { color: '#4a7a4a', gradient: 'linear-gradient(135deg, #4a7a4a 0%, #5a8a5a 50%, #3a6a3a 100%)' },
+                'caramel onyx': { color: '#b8864a', gradient: 'linear-gradient(135deg, #b8864a 0%, #c8965a 50%, #a8763a 100%)' },
+                'grand antique': { color: '#1a1a1a', gradient: 'linear-gradient(135deg, #1a1a1a 0%, #e8e0d0 30%, #1a1a1a 32%, #e8e0d0 60%, #1a1a1a 100%)' },
+                'esmeralda quartzite': { color: '#2a6a4a', gradient: 'linear-gradient(135deg, #2a6a4a 0%, #3a8a5a 50%, #1a5a3a 100%)' },
+                wood: { color: '#8B6914', gradient: 'linear-gradient(135deg, #a07828 0%, #8B6914 50%, #6a5010 100%)' },
+                oak: { color: '#b8944a', gradient: 'linear-gradient(135deg, #c8a45a 0%, #b8944a 50%, #a8843a 100%)' },
+                walnut: { color: '#5a3a20', gradient: 'linear-gradient(135deg, #6a4a30 0%, #5a3a20 50%, #4a2a10 100%)' },
+                timber: { color: '#9a7a4a', gradient: 'linear-gradient(135deg, #aa8a5a 0%, #9a7a4a 50%, #8a6a3a 100%)' },
+                velvet: { color: '#4a0060', gradient: 'linear-gradient(135deg, #5a1070 0%, #4a0060 50%, #3a0050 100%)' },
+                leather: { color: '#6B3A2A', gradient: 'linear-gradient(135deg, #7B4A3A 0%, #6B3A2A 50%, #5B2A1A 100%)' },
+                metal: { color: '#C0C0C0', gradient: 'linear-gradient(135deg, #d0d0d0 0%, #C0C0C0 50%, #a0a0a0 100%)' },
+                steel: { color: '#C0C0C0', gradient: 'linear-gradient(135deg, #d0d0d0 0%, #C0C0C0 50%, #a0a0a0 100%)' },
+                'stainless steel': { color: '#C0C0C0', gradient: 'linear-gradient(135deg, #e0e0e0 0%, #b0b0b0 50%, #d0d0d0 100%)' },
+                fabric: { color: '#c8b8a8', gradient: 'linear-gradient(135deg, #d8c8b8 0%, #c8b8a8 50%, #b8a898 100%)' },
+                linen: { color: '#d8cfc0', gradient: 'linear-gradient(135deg, #e8dfd0 0%, #d8cfc0 50%, #c8bfb0 100%)' },
+                glass: { color: '#d0e8f0', gradient: 'linear-gradient(135deg, #e0f0f8 0%, #c0d8e8 50%, #d0e8f0 100%)' },
+              };
+
+              const getSwatchStyle = (name: string) => {
+                const key = name.toLowerCase();
+                for (const [k, v] of Object.entries(MATERIAL_SWATCHES)) {
+                  if (key.includes(k)) return v.gradient ? { background: v.gradient } : { backgroundColor: v.color };
+                }
+                return { backgroundColor: '#c8b8a8' };
+              };
+
+              return (
+                <div className="mb-8">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-3">
+                    Material / Finish — <span className="text-gray-500 dark:text-gray-400 font-normal">{product.materialVariants[selectedVariant]}</span>
+                  </label>
+                  <div className="flex flex-wrap gap-3">
+                    {product.materialVariants.map((variant: string, i: number) => (
+                      <button
+                        key={i}
+                        onClick={() => setSelectedVariant(i)}
+                        className={`flex flex-col items-center gap-1.5 p-2 rounded-xl transition-all ${
+                          i === selectedVariant
+                            ? 'ring-2 ring-gray-900 dark:ring-white ring-offset-2 dark:ring-offset-black'
+                            : 'hover:ring-1 hover:ring-gray-300 dark:hover:ring-gray-600 hover:ring-offset-1'
+                        }`}
+                        title={variant}
+                      >
+                        <div
+                          className="w-12 h-12 rounded-full border-2 border-gray-200 dark:border-gray-600 shadow-sm"
+                          style={getSwatchStyle(variant)}
+                        />
+                        <span className={`text-[11px] max-w-[70px] text-center leading-tight line-clamp-2 ${
+                          i === selectedVariant ? 'text-gray-900 dark:text-white font-medium' : 'text-gray-500 dark:text-gray-400'
+                        }`}>
+                          {variant}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
             {/* Description */}
             <p className="text-gray-700 dark:text-gray-300 mb-8 leading-relaxed">
               {product.description}
             </p>
+
+            {/* Video */}
+            {product.videoUrl && (
+              <div className="mb-8">
+                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-3">Product Video</label>
+                {product.videoUrl.includes('youtube.com') || product.videoUrl.includes('youtu.be') ? (
+                  <div className="aspect-video rounded-xl overflow-hidden">
+                    <iframe
+                      src={product.videoUrl.replace('watch?v=', 'embed/').replace('youtu.be/', 'youtube.com/embed/')}
+                      className="w-full h-full"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      title={`${product.name} video`}
+                    />
+                  </div>
+                ) : product.videoUrl.includes('vimeo.com') ? (
+                  <div className="aspect-video rounded-xl overflow-hidden">
+                    <iframe
+                      src={product.videoUrl.replace('vimeo.com/', 'player.vimeo.com/video/')}
+                      className="w-full h-full"
+                      allow="autoplay; fullscreen; picture-in-picture"
+                      allowFullScreen
+                      title={`${product.name} video`}
+                    />
+                  </div>
+                ) : (
+                  <video controls className="w-full rounded-xl" preload="metadata">
+                    <source src={product.videoUrl} type="video/mp4" />
+                    Your browser does not support the video tag.
+                  </video>
+                )}
+              </div>
+            )}
 
             {/* Quantity Selector */}
             <div className="mb-8">

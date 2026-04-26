@@ -1,15 +1,9 @@
-import { Header } from '../Header';
-import { Footer } from '../Footer';
-import { Cart } from '../Cart';
 import { ArrowLeft } from 'lucide-react';
 import { FAQ } from '../FAQ';
 
 export function FAQPage() {
   return (
     <div className="min-h-screen bg-white">
-      <Header />
-      <Cart />
-
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <a
           href="/"
@@ -69,16 +63,14 @@ export function FAQPage() {
               Contact Us
             </a>
             <a
-              href="tel:1300123456"
+              href="tel:0424023996"
               className="inline-block px-6 py-3 border border-gray-300 rounded-lg hover:border-gray-900 transition-colors"
             >
-              Call 1300 123 456
+              Call 0424 023 996
             </a>
           </div>
         </div>
       </div>
-
-      <Footer />
     </div>
   );
 }

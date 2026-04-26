@@ -348,7 +348,7 @@ All documentation files are in the root directory. See files starting with:
 
 ### Contact:
 - **Email:** hello@vivereinstyle.com
-- **Location:** Adelaide SA 5000, Australia
+- **Location:** Lonsdale SA 5160, Australia
 - **Website:** vivereinstyle.com
 
 ---

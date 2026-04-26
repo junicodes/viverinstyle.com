@@ -159,15 +159,15 @@ export function Footer({ onNavigate }: FooterProps = {}) {
               <li className="flex items-start gap-3">
                 <MapPin className="w-5 h-5 text-gray-400 mt-1 flex-shrink-0" />
                 <div className="text-gray-400">
-                  <div>123 Furniture Lane</div>
-                  <div>Adelaide SA 5000</div>
+                  <div>8/105 O'Sullivan Road</div>
+                  <div>Lonsdale SA 5160</div>
                   <div>Australia</div>
                 </div>
               </li>
               <li className="flex items-center gap-3">
                 <Phone className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                <a href="tel:1300123456" className="text-gray-400 hover:text-white transition-colors">
-                  1300 123 456
+                <a href="tel:0424023996" className="text-gray-400 hover:text-white transition-colors">
+                  0424 023 996
                 </a>
               </li>
               <li className="flex items-center gap-3">

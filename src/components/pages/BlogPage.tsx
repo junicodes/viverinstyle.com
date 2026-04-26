@@ -2,9 +2,6 @@ import { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft, ArrowRight, Clock, Calendar } from 'lucide-react';
 import { Button } from '../ui/button';
-import { Header } from '../Header';
-import { Footer } from '../Footer';
-import { Cart } from '../Cart';
 import { Helmet } from 'react-helmet';
 import { projectId, publicAnonKey } from '../../utils/supabase/info';
 import { DEFAULT_BLOG_POSTS, type BlogPost } from '../../data/defaultBlogPosts';
@@ -67,9 +64,6 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
           <meta property="og:type" content="article" />
           <link rel="canonical" href={`https://www.vivereinstyle.com/blogs/${selectedPost.slug}`} />
         </Helmet>
-
-        <Header onNavigate={onNavigate} />
-        <Cart />
 
         <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
           <Button
@@ -164,7 +158,6 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
           </div>
         </article>
 
-        <Footer onNavigate={onNavigate} />
       </div>
     );
   }
@@ -176,9 +169,6 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
         <meta name="description" content="Explore furniture buying guides, interior design inspiration, and home styling tips from Vivere In Style. Expert advice for creating your dream Australian home." />
         <link rel="canonical" href="https://www.vivereinstyle.com/blogs" />
       </Helmet>
-
-      <Header onNavigate={onNavigate} />
-      <Cart />
 
       {/* Hero */}
       <section className="bg-gradient-to-br from-gray-900 to-gray-700 text-white py-16 sm:py-20">
@@ -324,7 +314,6 @@ export function BlogPage({ onNavigate }: BlogPageProps) {
         </div>
       )}
 
-      <Footer onNavigate={onNavigate} />
     </div>
   );
 }

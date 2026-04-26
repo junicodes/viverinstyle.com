@@ -1,6 +1,3 @@
-import { Header } from '../Header';
-import { Footer } from '../Footer';
-import { Cart } from '../Cart';
 import { ArrowLeft, MapPin, Phone, Mail, Clock, MessageCircle } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -9,12 +6,21 @@ import { Label } from '../ui/label';
 import { useState } from 'react';
 import { toast } from 'sonner@2.0.3';
 
+const CONTACT_REASONS = [
+  'General Enquiry',
+  'Book a Showroom Visit',
+  'Product Enquiry',
+  'Order Support',
+  'Returns / Warranty',
+  'Trade / Wholesale',
+];
+
 export function ContactUsPage() {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
-    subject: '',
+    subject: typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('reason') === 'showroom' ? 'Book a Showroom Visit' : '',
     message: '',
   });
 
@@ -26,9 +32,6 @@ export function ContactUsPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header />
-      <Cart />
-
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <a href="/" className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-6 sm:mb-8 transition-colors">
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -82,14 +85,19 @@ export function ContactUsPage() {
               </div>
 
               <div>
-                <Label htmlFor="subject">Subject *</Label>
-                <Input
+                <Label htmlFor="subject">Reason for Contact *</Label>
+                <select
                   id="subject"
                   value={formData.subject}
                   onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                   required
-                  className="mt-2"
-                />
+                  className="mt-2 flex h-10 w-full rounded-md border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white"
+                >
+                  <option value="">Select a reason...</option>
+                  {CONTACT_REASONS.map(reason => (
+                    <option key={reason} value={reason}>{reason}</option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -122,8 +130,8 @@ export function ContactUsPage() {
                   <div>
                     <h3 className="mb-2">Visit Our Showroom</h3>
                     <p className="text-gray-600">
-                      123 Furniture Lane<br />
-                      Adelaide SA 5000<br />
+                      8/105 O'Sullivan Road<br />
+                      Lonsdale SA 5160<br />
                       Australia
                     </p>
                   </div>
@@ -136,8 +144,8 @@ export function ContactUsPage() {
                   <div>
                     <h3 className="mb-2">Call Us</h3>
                     <p className="text-gray-600">
-                      <a href="tel:1300123456" className="hover:text-gray-900">
-                        1300 123 456
+                      <a href="tel:0424023996" className="hover:text-gray-900">
+                        0424 023 996
                       </a>
                     </p>
                   </div>
@@ -173,8 +181,23 @@ export function ContactUsPage() {
               </div>
             </div>
 
+            {/* Showroom Appointment Card */}
+            <div className="p-6 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-xl">
+              <h3 className="text-lg font-semibold text-amber-900 dark:text-amber-100 mb-2">Showroom Visits — By Appointment Only</h3>
+              <p className="text-sm text-amber-800 dark:text-amber-200 mb-3">
+                Our pieces are stored in a private showroom space in Lonsdale. To maintain a tailored experience, we host viewings by appointment only.
+              </p>
+              <div className="text-sm text-amber-800 dark:text-amber-200 space-y-1 mb-4">
+                <p>📍 8/105 O'Sullivan Road, Lonsdale SA 5160</p>
+                <p>📞 <a href="tel:0424023996" className="underline">0424 023 996</a></p>
+              </div>
+              <p className="text-xs text-amber-700 dark:text-amber-300">
+                Select "Book a Showroom Visit" in the form to request an appointment.
+              </p>
+            </div>
+
             {/* Quick Links */}
-            <div className="p-6 bg-gray-50 rounded-xl">
+            <div className="p-6 bg-gray-50 dark:bg-gray-900 rounded-xl">
               <h3 className="mb-4">Need Quick Answers?</h3>
               <div className="space-y-3">
                 <a href="/faq" className="block text-gray-600 hover:text-gray-900 transition-colors">
@@ -199,8 +222,6 @@ export function ContactUsPage() {
           </div>
         </div>
       </div>
-
-      <Footer />
     </div>
   );
 }

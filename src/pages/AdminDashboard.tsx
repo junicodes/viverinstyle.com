@@ -25,7 +25,10 @@ import {
   Loader2,
   Truck,
   FileText,
-  Star
+  Star,
+  Tag,
+  ToggleLeft,
+  ToggleRight
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -107,6 +110,23 @@ export default function AdminDashboard({ onNavigate }: AdminDashboardProps = {})
   const [newTestimonial, setNewTestimonial] = useState({ name: '', location: '', rating: '5', text: '', product: '', date: '' });
   const [isAddingPhoto, setIsAddingPhoto] = useState(false);
   const [isAddingTestimonial, setIsAddingTestimonial] = useState(false);
+
+  // Store settings
+  const [defaultShipping, setDefaultShipping] = useState('149');
+  const [savingSettings, setSavingSettings] = useState(false);
+
+  // Discount codes
+  const [discountCodes, setDiscountCodes] = useState<any[]>([]);
+  const [isAddingDiscount, setIsAddingDiscount] = useState(false);
+  const [newDiscount, setNewDiscount] = useState({
+    code: '',
+    type: 'percentage' as 'percentage' | 'fixed',
+    value: '',
+    minOrder: '',
+    maxUses: '',
+    productIds: '' as string,
+    expiresAt: '',
+  });
 
   // Search and filter
   const [searchTerm, setSearchTerm] = useState('');
@@ -217,9 +237,11 @@ export default function AdminDashboard({ onNavigate }: AdminDashboardProps = {})
       // Load blog posts
       await loadBlogPosts();
 
-      // Load customer photos and testimonials
+      // Load customer photos, testimonials, store settings, and discounts
       await loadCustomerPhotos();
       await loadTestimonials();
+      await loadStoreSettings();
+      await loadDiscountCodes();
     } catch (error) {
       console.error('Error loading dashboard data:', error);
       toast.error('Failed to load dashboard data');
@@ -518,6 +540,85 @@ export default function AdminDashboard({ onNavigate }: AdminDashboardProps = {})
     } catch (error) {
       toast.error('Failed to save posts');
     }
+  };
+
+  const loadStoreSettings = async () => {
+    try {
+      const supabase = getSupabaseClient();
+      const { data } = await supabase.from('kv_store_e9dccf07').select('value').eq('key', 'settings:store').maybeSingle();
+      if (data?.value?.defaultShipping !== undefined) {
+        setDefaultShipping(data.value.defaultShipping.toString());
+      }
+    } catch {}
+  };
+
+  const saveStoreSettings = async () => {
+    try {
+      setSavingSettings(true);
+      const supabase = getSupabaseClient();
+      await supabase.from('kv_store_e9dccf07').upsert({
+        key: 'settings:store',
+        value: { defaultShipping: parseFloat(defaultShipping) || 0 },
+      });
+      toast.success('Shipping settings saved!');
+    } catch {
+      toast.error('Failed to save settings');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
+  const loadDiscountCodes = async () => {
+    try {
+      const supabase = getSupabaseClient();
+      const { data } = await supabase.from('kv_store_e9dccf07').select('value').like('key', 'discount:%');
+      setDiscountCodes((data || []).map((d: any) => d.value));
+    } catch {}
+  };
+
+  const handleAddDiscount = async () => {
+    if (!newDiscount.code || !newDiscount.value) { toast.error('Code and value are required'); return; }
+    try {
+      setIsAddingDiscount(true);
+      const supabase = getSupabaseClient();
+      const discountData = {
+        id: newDiscount.code.toUpperCase().replace(/\s/g, ''),
+        code: newDiscount.code.toUpperCase().replace(/\s/g, ''),
+        type: newDiscount.type,
+        value: parseFloat(newDiscount.value),
+        minOrder: newDiscount.minOrder ? parseFloat(newDiscount.minOrder) : 0,
+        maxUses: newDiscount.maxUses ? parseInt(newDiscount.maxUses) : null,
+        usedCount: 0,
+        productIds: newDiscount.productIds ? newDiscount.productIds.split(',').map(s => s.trim()).filter(Boolean) : [],
+        expiresAt: newDiscount.expiresAt || null,
+        active: true,
+        createdAt: new Date().toISOString(),
+      };
+      await supabase.from('kv_store_e9dccf07').upsert({ key: `discount:${discountData.code}`, value: discountData });
+      toast.success(`Discount code ${discountData.code} created!`);
+      setNewDiscount({ code: '', type: 'percentage', value: '', minOrder: '', maxUses: '', productIds: '', expiresAt: '' });
+      loadDiscountCodes();
+    } catch { toast.error('Failed to create discount'); } finally { setIsAddingDiscount(false); }
+  };
+
+  const handleDeleteDiscount = async (code: string) => {
+    if (!confirm(`Delete discount code ${code}?`)) return;
+    try {
+      const supabase = getSupabaseClient();
+      await supabase.from('kv_store_e9dccf07').delete().eq('key', `discount:${code}`);
+      toast.success('Discount deleted');
+      loadDiscountCodes();
+    } catch { toast.error('Failed to delete'); }
+  };
+
+  const handleToggleDiscount = async (discount: any) => {
+    try {
+      const supabase = getSupabaseClient();
+      const updated = { ...discount, active: !discount.active };
+      await supabase.from('kv_store_e9dccf07').upsert({ key: `discount:${discount.code}`, value: updated });
+      toast.success(updated.active ? 'Discount activated' : 'Discount deactivated');
+      loadDiscountCodes();
+    } catch { toast.error('Failed to update'); }
   };
 
   const loadCustomerPhotos = async () => {
@@ -1613,8 +1714,151 @@ export default function AdminDashboard({ onNavigate }: AdminDashboardProps = {})
             </Card>
           </TabsContent>
 
-          {/* Content Tab - Customer Photos & Testimonials */}
+          {/* Content Tab - Settings, Customer Photos & Testimonials */}
           <TabsContent value="content" className="space-y-6">
+            {/* Store Settings */}
+            <Card className="bg-gray-50 dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
+              <CardHeader>
+                <CardTitle className="text-gray-900 dark:text-white">Store Settings</CardTitle>
+                <CardDescription>Global shipping and store configuration</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <Label htmlFor="defaultShipping" className="text-gray-700 dark:text-gray-300 mb-2 block">
+                      Default Shipping Cost (AUD)
+                    </Label>
+                    <Input
+                      id="defaultShipping"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={defaultShipping}
+                      onChange={(e) => setDefaultShipping(e.target.value)}
+                      placeholder="149"
+                      className="border-gray-300 dark:border-gray-600 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
+                    />
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Set to 0 for free shipping globally. Products can override this with their own shipping cost.
+                    </p>
+                  </div>
+                  <div className="flex items-end">
+                    <Button onClick={saveStoreSettings} disabled={savingSettings}>
+                      {savingSettings ? 'Saving...' : 'Save Settings'}
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Discount Codes */}
+            <Card className="bg-gray-50 dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
+              <CardHeader>
+                <CardTitle className="text-gray-900 dark:text-white">Discount Codes</CardTitle>
+                <CardDescription>Create and manage promotional discount codes</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="bg-white dark:bg-zinc-800 rounded-lg p-4 mb-6 border border-gray-200 dark:border-zinc-700 space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <Label className="text-gray-700 dark:text-gray-300 text-xs mb-1 block">Code *</Label>
+                      <Input value={newDiscount.code} onChange={(e) => setNewDiscount({ ...newDiscount, code: e.target.value.toUpperCase() })} placeholder="e.g., WELCOME20" className="border-gray-300 dark:border-gray-600 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white font-mono" />
+                    </div>
+                    <div>
+                      <Label className="text-gray-700 dark:text-gray-300 text-xs mb-1 block">Type</Label>
+                      <select value={newDiscount.type} onChange={(e) => setNewDiscount({ ...newDiscount, type: e.target.value as any })} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-zinc-900 text-gray-900 dark:text-white text-sm">
+                        <option value="percentage">Percentage (%)</option>
+                        <option value="fixed">Fixed Amount ($)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <Label className="text-gray-700 dark:text-gray-300 text-xs mb-1 block">Value * {newDiscount.type === 'percentage' ? '(%)' : '($)'}</Label>
+                      <Input type="number" min="0" step={newDiscount.type === 'percentage' ? '1' : '0.01'} value={newDiscount.value} onChange={(e) => setNewDiscount({ ...newDiscount, value: e.target.value })} placeholder={newDiscount.type === 'percentage' ? '20' : '50.00'} className="border-gray-300 dark:border-gray-600 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <Label className="text-gray-700 dark:text-gray-300 text-xs mb-1 block">Min Order ($)</Label>
+                      <Input type="number" min="0" step="0.01" value={newDiscount.minOrder} onChange={(e) => setNewDiscount({ ...newDiscount, minOrder: e.target.value })} placeholder="0 (no minimum)" className="border-gray-300 dark:border-gray-600 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white" />
+                    </div>
+                    <div>
+                      <Label className="text-gray-700 dark:text-gray-300 text-xs mb-1 block">Max Uses</Label>
+                      <Input type="number" min="1" value={newDiscount.maxUses} onChange={(e) => setNewDiscount({ ...newDiscount, maxUses: e.target.value })} placeholder="Unlimited" className="border-gray-300 dark:border-gray-600 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white" />
+                    </div>
+                    <div>
+                      <Label className="text-gray-700 dark:text-gray-300 text-xs mb-1 block">Expires</Label>
+                      <Input type="date" value={newDiscount.expiresAt} onChange={(e) => setNewDiscount({ ...newDiscount, expiresAt: e.target.value })} className="border-gray-300 dark:border-gray-600 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-gray-700 dark:text-gray-300 text-xs mb-1 block">
+                      Limit to specific products
+                      <span className="text-gray-500 font-normal ml-1">(paste product IDs, comma-separated. Leave blank for all products)</span>
+                    </Label>
+                    <select multiple value={[]} onChange={(e) => {
+                      const selected = Array.from(e.target.selectedOptions).map(o => o.value);
+                      const current = newDiscount.productIds ? newDiscount.productIds.split(',').map(s => s.trim()).filter(Boolean) : [];
+                      const merged = [...new Set([...current, ...selected])];
+                      setNewDiscount({ ...newDiscount, productIds: merged.join(', ') });
+                    }} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-zinc-900 text-gray-900 dark:text-white text-sm h-24">
+                      {products.map((p: any) => (
+                        <option key={p.id} value={p.id} className={newDiscount.productIds.includes(p.id) ? 'bg-blue-100 dark:bg-blue-900' : ''}>
+                          {p.name} (${p.price})
+                        </option>
+                      ))}
+                    </select>
+                    {newDiscount.productIds && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <span className="text-xs text-gray-500">{newDiscount.productIds.split(',').filter(Boolean).length} product(s) selected</span>
+                        <button type="button" onClick={() => setNewDiscount({ ...newDiscount, productIds: '' })} className="text-xs text-red-500 hover:underline">Clear</button>
+                      </div>
+                    )}
+                  </div>
+                  <Button onClick={handleAddDiscount} disabled={isAddingDiscount}>
+                    <Tag className="h-4 w-4 mr-2" />
+                    {isAddingDiscount ? 'Creating...' : 'Create Discount Code'}
+                  </Button>
+                </div>
+
+                {discountCodes.length > 0 ? (
+                  <div className="space-y-3">
+                    {discountCodes.map((d: any) => (
+                      <div key={d.code} className="flex items-center gap-4 p-4 bg-white dark:bg-zinc-800 rounded-lg border border-gray-200 dark:border-zinc-700">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-mono font-bold text-gray-900 dark:text-white">{d.code}</span>
+                            <Badge variant={d.active ? 'default' : 'secondary'} className={d.active ? 'bg-green-600' : ''}>
+                              {d.active ? 'Active' : 'Inactive'}
+                            </Badge>
+                            {d.expiresAt && new Date(d.expiresAt) < new Date() && (
+                              <Badge variant="secondary" className="bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300">Expired</Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">
+                            {d.type === 'percentage' ? `${d.value}% off` : `$${d.value} off`}
+                            {d.minOrder > 0 && ` on orders over $${d.minOrder}`}
+                            {d.maxUses && ` | ${d.usedCount || 0}/${d.maxUses} uses`}
+                            {d.productIds?.length > 0 && ` | ${d.productIds.length} specific product(s)`}
+                            {d.expiresAt && ` | Expires ${new Date(d.expiresAt).toLocaleDateString()}`}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button variant="ghost" size="sm" onClick={() => handleToggleDiscount(d)} title={d.active ? 'Deactivate' : 'Activate'}>
+                            {d.active ? <ToggleRight className="h-5 w-5 text-green-600" /> : <ToggleLeft className="h-5 w-5 text-gray-400" />}
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleDeleteDiscount(d.code)}>
+                            <Trash2 className="h-4 w-4 text-red-600" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-gray-500 py-6">No discount codes created yet.</p>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Customer Photos */}
             <Card className="bg-gray-50 dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
               <CardHeader>

@@ -29,6 +29,7 @@ import { Testimonials } from './components/Testimonials';
 import { FAQ } from './components/FAQ';
 import { Footer } from './components/Footer';
 import { Cart } from './components/Cart';
+import { Checkout } from './components/Checkout';
 import { CategoryPage } from './components/CategoryPage';
 import { CollectionPage } from './components/CollectionPage';
 import { ProductDetailPage } from './components/pages/ProductDetailPage';
@@ -64,7 +65,7 @@ function AppContent() {
       if (path === '/' || path === '') {
         setCurrentPage('home');
       } else {
-        setCurrentPage(path.replace(/^\//, ''));
+        setCurrentPage(path.replace(/^\//, '').split('?')[0]);
       }
     };
 
@@ -157,7 +158,8 @@ function AppContent() {
   };
 
   const handleNavigate = (page: string) => {
-    const cleanPage = page.replace(/^\//, '');
+    const fullPath = page.replace(/^\//, '');
+    const cleanPage = fullPath.split('?')[0];
     setCurrentPage(cleanPage);
     
     if (cleanPage !== 'category') {
@@ -167,7 +169,7 @@ function AppContent() {
     if (cleanPage === 'home') {
       window.history.pushState({}, '', '/');
     } else {
-      window.history.pushState({}, '', `/${cleanPage}`);
+      window.history.pushState({}, '', `/${fullPath}`);
     }
   };
 
@@ -176,17 +178,41 @@ function AppContent() {
     if (category) handleCategoryClick(category);
   };
 
-  // Standalone info pages (they include their own Header/Footer)
-  if (currentPage === 'terms-conditions') return <TermsConditionsPage />;
-  if (currentPage === 'brand-story') return <BrandStoryPage onBack={handleBackToHome} />;
-  if (currentPage === 'faq') return <FAQPage />;
-  if (currentPage === 'contact-us') return <ContactUsPage />;
-  if (currentPage === 'shipping-delivery') return <ShippingDeliveryPage />;
-  if (currentPage === 'returns-refunds') return <ReturnsRefundsPage />;
-  if (currentPage === 'warranty') return <WarrantyPage />;
-  if (currentPage === 'privacy-policy') return <PrivacyPolicyPage />;
-  if (currentPage === 'sitemap') return <SitemapPage />;
-  if (currentPage === 'blogs') return <BlogPage onNavigate={handleNavigate} />;
+  // Info pages — wrapped with shared layout so navigation always works
+  const infoPages: Record<string, React.ReactNode> = {
+    'terms-conditions': <TermsConditionsPage />,
+    'brand-story': <BrandStoryPage onBack={handleBackToHome} />,
+    'faq': <FAQPage />,
+    'contact-us': <ContactUsPage />,
+    'shipping-delivery': <ShippingDeliveryPage />,
+    'returns-refunds': <ReturnsRefundsPage />,
+    'warranty': <WarrantyPage />,
+    'privacy-policy': <PrivacyPolicyPage />,
+    'sitemap': <SitemapPage />,
+    'blogs': <BlogPage onNavigate={handleNavigate} />,
+  };
+
+  if (infoPages[currentPage]) {
+    return (
+      <>
+        <Header onNavigate={handleNavigate} onCategoryClick={commonCategoryClickHandler} onProductClick={handleProductClick} />
+        <Cart />
+        {infoPages[currentPage]}
+        <Footer onNavigate={handleNavigate} />
+        <Toaster position="top-right" />
+      </>
+    );
+  }
+
+  // Checkout Page
+  if (currentPage === 'checkout') {
+    return (
+      <>
+        <Checkout isOpen={true} onClose={handleBackToHome} onProductClick={handleProductClick} />
+        <Toaster position="top-right" />
+      </>
+    );
+  }
 
   // Wishlist Page
   if (currentPage === 'wishlist') {
@@ -550,6 +576,45 @@ function AppContent() {
               </section>
             );
           })}
+
+          {/* Showroom */}
+          <section className="py-16 bg-gray-50 dark:bg-gray-900">
+            <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="grid md:grid-cols-2 gap-10 items-center">
+                <div>
+                  <h2 className="text-3xl md:text-4xl text-gray-900 dark:text-white mb-4">Visit Our Showroom</h2>
+                  <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
+                    Experience our furniture in person. Our pieces are stored in a private showroom space in Lonsdale. To maintain a tailored experience, we host viewings by appointment only.
+                  </p>
+                  <div className="space-y-3 text-gray-700 dark:text-gray-300">
+                    <p className="flex items-start gap-3">
+                      <span className="text-xl">📍</span>
+                      <span>8/105 O'Sullivan Road, Lonsdale SA 5160</span>
+                    </p>
+                    <p className="flex items-start gap-3">
+                      <span className="text-xl">📞</span>
+                      <a href="tel:0424023996" className="hover:underline">0424 023 996</a>
+                    </p>
+                    <p className="flex items-start gap-3">
+                      <span className="text-xl">✉️</span>
+                      <a href="mailto:hello@vivereinstyle.com" className="hover:underline">hello@vivereinstyle.com</a>
+                    </p>
+                  </div>
+                  <Button size="lg" className="mt-6" onClick={() => { handleNavigate('contact-us?reason=showroom'); }}>
+                    Book an Appointment
+                  </Button>
+                </div>
+                <div className="aspect-[4/3] rounded-2xl overflow-hidden">
+                  <img
+                    src="https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=800&q=80"
+                    alt="Vivere In Style Showroom"
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
 
           {/* Newsletter */}
           <section className="py-20 bg-black text-white">

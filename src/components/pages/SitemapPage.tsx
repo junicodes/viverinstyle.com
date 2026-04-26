@@ -1,14 +1,8 @@
-import { Header } from '../Header';
-import { Footer } from '../Footer';
-import { Cart } from '../Cart';
 import { ArrowLeft, Home, ShoppingBag, Info, FileText } from 'lucide-react';
 
 export function SitemapPage() {
   return (
     <div className="min-h-screen bg-white">
-      <Header />
-      <Cart />
-
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <a href="/" className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-8 transition-colors">
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -181,8 +175,6 @@ export function SitemapPage() {
           </div>
         </div>
       </div>
-
-      <Footer />
     </div>
   );
 }

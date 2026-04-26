@@ -1,14 +1,8 @@
-import { Header } from '../Header';
-import { Footer } from '../Footer';
-import { Cart } from '../Cart';
 import { ArrowLeft } from 'lucide-react';
 
 export function TermsConditionsPage() {
   return (
     <div className="min-h-screen bg-white">
-      <Header />
-      <Cart />
-
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <a
           href="/"
@@ -133,15 +127,13 @@ export function TermsConditionsPage() {
             </p>
             <div className="mt-4 space-y-2 text-gray-600">
               <p>Vivere In Style</p>
-              <p>123 Furniture Lane, Adelaide SA 5000, Australia</p>
-              <p>Phone: 1300 123 456</p>
+              <p>8/105 O'Sullivan Road, Lonsdale SA 5160, Australia</p>
+              <p>Phone: 0424 023 996</p>
               <p>Email: hello@vivereinstyle.com</p>
             </div>
           </section>
         </div>
       </div>
-
-      <Footer />
     </div>
   );
 }

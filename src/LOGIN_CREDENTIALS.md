@@ -175,7 +175,7 @@ Follow the setup guide: https://supabase.com/docs/guides/auth/social-login/auth-
 For questions or issues:
 - Email: hello@vivereinstyle.com
 - Website: vivereinstyle.com
-- Location: Adelaide SA 5000, Australia
+- Location: Lonsdale SA 5160, Australia
 
 ---
 

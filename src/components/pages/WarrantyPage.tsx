@@ -1,14 +1,8 @@
-import { Header } from '../Header';
-import { Footer } from '../Footer';
-import { Cart } from '../Cart';
 import { ArrowLeft, Shield, Award, Clock } from 'lucide-react';
 
 export function WarrantyPage() {
   return (
     <div className="min-h-screen bg-white">
-      <Header />
-      <Cart />
-
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <a href="/" className="inline-flex items-center text-gray-600 hover:text-gray-900 mb-8 transition-colors">
           <ArrowLeft className="w-4 h-4 mr-2" />
@@ -149,14 +143,12 @@ export function WarrantyPage() {
             <h2 className="text-2xl mb-4">Contact Warranty Department</h2>
             <div className="space-y-2 text-gray-600">
               <p><strong>Email:</strong> warranty@vivereinstyle.com</p>
-              <p><strong>Phone:</strong> 1300 123 456</p>
+              <p><strong>Phone:</strong> 0424 023 996</p>
               <p><strong>Hours:</strong> Monday-Friday 9am-6pm ACST</p>
             </div>
           </section>
         </div>
       </div>
-
-      <Footer />
     </div>
   );
 }
