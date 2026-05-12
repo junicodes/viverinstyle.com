@@ -14,6 +14,10 @@ export interface CartItem {
   };
 }
 
+export function cartCustomizationKey(c?: CartItem['customization']): string {
+  return JSON.stringify(c ?? {});
+}
+
 export interface User {
   id: string;
   email: string;
@@ -25,8 +29,9 @@ interface StoreState {
   // Cart
   cart: CartItem[];
   addToCart: (item: CartItem) => void;
-  removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  removeFromCart: (productId: string, customization?: CartItem['customization']) => void;
+  updateQuantity: (productId: string, quantity: number, customization?: CartItem['customization']) => void;
+  isLineInCart: (productId: string, customization?: CartItem['customization']) => boolean;
   clearCart: () => void;
   cartTotal: () => number;
   
@@ -85,19 +90,35 @@ export const useStore = create<StoreState>()(
           set({ cart: [...get().cart, item] });
         }
       },
-      removeFromCart: (productId) => {
-        set({ cart: get().cart.filter((item) => item.productId !== productId) });
+      removeFromCart: (productId, customization) => {
+        const key = cartCustomizationKey(customization);
+        set({
+          cart: get().cart.filter(
+            (item) =>
+              !(item.productId === productId && cartCustomizationKey(item.customization) === key),
+          ),
+        });
       },
-      updateQuantity: (productId, quantity) => {
+      updateQuantity: (productId, quantity, customization) => {
+        const key = cartCustomizationKey(customization);
         if (quantity <= 0) {
-          get().removeFromCart(productId);
+          get().removeFromCart(productId, customization);
         } else {
           set({
             cart: get().cart.map((item) =>
-              item.productId === productId ? { ...item, quantity } : item
+              item.productId === productId && cartCustomizationKey(item.customization) === key
+                ? { ...item, quantity }
+                : item,
             ),
           });
         }
+      },
+      isLineInCart: (productId, customization) => {
+        const key = cartCustomizationKey(customization);
+        return get().cart.some(
+          (item) =>
+            item.productId === productId && cartCustomizationKey(item.customization) === key,
+        );
       },
       clearCart: () => set({ cart: [] }),
       cartTotal: () => {

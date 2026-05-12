@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
-import { Heart, ArrowLeft, ShoppingCart, Trash2 } from 'lucide-react';
+import { Heart, ArrowLeft, ShoppingCart, Trash2, Check } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useStore } from '../../store/useStore';
 import { api } from '../../utils/api';
 import { Helmet } from 'react-helmet';
 import { isProductInStock } from '../SEO';
 import { toast } from 'sonner@2.0.3';
+import { cn } from '../ui/utils';
 
 interface WishlistPageProps {
   onBack: () => void;
@@ -13,7 +14,8 @@ interface WishlistPageProps {
 }
 
 export function WishlistPage({ onBack, onProductClick }: WishlistPageProps) {
-  const { favorites, toggleFavorite, addToCart, setCartOpen } = useStore();
+  const { favorites, toggleFavorite, addToCart, setCartOpen, isLineInCart } = useStore();
+  const [addedFlashId, setAddedFlashId] = useState<string | null>(null);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,6 +36,7 @@ export function WishlistPage({ onBack, onProductClick }: WishlistPageProps) {
   }, [favorites]);
 
   const handleAddToCart = (product: any) => {
+    if (!isProductInStock(product) || isLineInCart(product.id)) return;
     addToCart({
       productId: product.id,
       name: product.name,
@@ -41,6 +44,8 @@ export function WishlistPage({ onBack, onProductClick }: WishlistPageProps) {
       image: product.images?.[0] || product.image,
       quantity: 1,
     });
+    setAddedFlashId(product.id);
+    window.setTimeout(() => setAddedFlashId((id) => (id === product.id ? null : id)), 1200);
     toast.success(`${product.name} added to cart!`, {
       action: { label: 'View Cart', onClick: () => setCartOpen(true) },
     });
@@ -79,6 +84,7 @@ export function WishlistPage({ onBack, onProductClick }: WishlistPageProps) {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {products.map((product: any) => {
               const inStock = isProductInStock(product);
+              const inCart = isLineInCart(product.id);
               return (
                 <div key={product.id} className="group bg-white dark:bg-black dark:border dark:border-gray-700 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow duration-300">
                   <button onClick={() => onProductClick(product)} className="w-full text-left">
@@ -105,12 +111,25 @@ export function WishlistPage({ onBack, onProductClick }: WishlistPageProps) {
                     <div className="flex gap-2 mt-3">
                       <Button
                         size="sm"
-                        className="flex-1"
+                        className={cn(
+                          'flex-1 transition-all duration-200',
+                          'hover:brightness-105 hover:ring-2 hover:ring-gray-900 dark:hover:ring-gray-100',
+                          addedFlashId === product.id && 'ring-2 ring-emerald-500 ring-offset-2 dark:ring-offset-black scale-[1.02]',
+                        )}
                         onClick={() => handleAddToCart(product)}
-                        disabled={!inStock}
+                        disabled={!inStock || inCart}
                       >
-                        <ShoppingCart className="w-3 h-3 mr-1" />
-                        {inStock ? 'Add to Cart' : 'Pre-order'}
+                        {inCart ? (
+                          <>
+                            <Check className="w-3 h-3 mr-1" />
+                            In cart
+                          </>
+                        ) : (
+                          <>
+                            <ShoppingCart className="w-3 h-3 mr-1" />
+                            {inStock ? 'Add to Cart' : 'Pre-order'}
+                          </>
+                        )}
                       </Button>
                       <Button
                         size="sm"

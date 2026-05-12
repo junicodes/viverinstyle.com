@@ -94,6 +94,14 @@ export const supabaseApi = {
     return data.order;
   },
 
+  getShippingQuote: async (payload: { destinationPostcode: string; items: Array<{ productId: string; quantity: number }> }) => {
+    const data = await apiCall('/shipping/quote', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+    return data.shipping;
+  },
+
   // Seed data
   seedDatabase: async (seedData: any) => {
     const data = await apiCall('/seed', {

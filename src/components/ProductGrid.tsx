@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { ShoppingCart, Heart, Eye } from 'lucide-react';
+import { ShoppingCart, Heart, Eye, Check } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { useStore } from '../store/useStore';
 import { isProductInStock } from './SEO';
+import { cn } from './ui/utils';
+import { toast } from 'sonner@2.0.3';
 
 interface Product {
   id: string;
@@ -26,17 +28,26 @@ interface ProductGridProps {
 }
 
 export function ProductGrid({ products, onProductClick }: ProductGridProps) {
-  const { addToCart } = useStore();
+  const { addToCart, isLineInCart, setCartOpen } = useStore();
   const [hoveredProduct, setHoveredProduct] = useState<string | null>(null);
+  const [addedFlashId, setAddedFlashId] = useState<string | null>(null);
 
   const handleAddToCart = (product: Product, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!isProductInStock(product) || isLineInCart(product.id)) return;
     addToCart({
       productId: product.id,
       name: product.name,
       price: product.price,
       image: product.images[0],
       quantity: 1,
+    });
+    setAddedFlashId(product.id);
+    window.setTimeout(() => {
+      setAddedFlashId((id) => (id === product.id ? null : id));
+    }, 1200);
+    toast.success(`${product.name} added to cart!`, {
+      action: { label: 'View Cart', onClick: () => setCartOpen(true) },
     });
   };
 
@@ -118,12 +129,25 @@ export function ProductGrid({ products, onProductClick }: ProductGridProps) {
               >
                 <Button
                   size="sm"
-                  className="flex-1"
+                  className={cn(
+                    'flex-1 transition-all duration-200',
+                    'hover:brightness-105 hover:ring-2 hover:ring-gray-900 dark:hover:ring-gray-100',
+                    addedFlashId === product.id && 'ring-2 ring-emerald-500 ring-offset-2 ring-offset-white dark:ring-offset-black scale-[1.02]',
+                  )}
                   onClick={(e) => handleAddToCart(product, e)}
-                  disabled={!isProductInStock(product)}
+                  disabled={!isProductInStock(product) || isLineInCart(product.id)}
                 >
-                  <ShoppingCart className="w-4 h-4 mr-2" />
-                  Add to Cart
+                  {isLineInCart(product.id) ? (
+                    <>
+                      <Check className="w-4 h-4 mr-2" />
+                      In cart
+                    </>
+                  ) : (
+                    <>
+                      <ShoppingCart className="w-4 h-4 mr-2" />
+                      Add to Cart
+                    </>
+                  )}
                 </Button>
                 <Button
                   size="sm"

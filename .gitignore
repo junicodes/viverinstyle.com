@@ -5,3 +5,6 @@ dist
 .env.local
 .env.production
 *.log
+
+# Staging copy for Supabase CLI deploy (see npm run deploy:function)
+supabase/functions/make-server-35e920f3/

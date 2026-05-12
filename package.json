@@ -65,6 +65,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "deploy:function": "mkdir -p supabase/functions/make-server-35e920f3 && cp src/supabase/functions/server/index.tsx supabase/functions/make-server-35e920f3/index.ts && cp src/supabase/functions/server/kv_store.tsx supabase/functions/make-server-35e920f3/kv_store.tsx && cp src/supabase/functions/server/emails.tsx supabase/functions/make-server-35e920f3/emails.tsx && supabase functions deploy make-server-35e920f3 --use-api"
   }
 }

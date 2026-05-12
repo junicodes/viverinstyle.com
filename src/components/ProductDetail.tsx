@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Plus, Minus, Check, Truck, Shield, RotateCcw } from 'lucide-react';
+import { X, Plus, Minus, Check, Truck, Shield, RotateCcw, ShoppingCart } from 'lucide-react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { useStore } from '../store/useStore';
+import { cn } from './ui/utils';
+import { toast } from 'sonner@2.0.3';
 
 interface ProductDetailProps {
   product: any;
@@ -13,19 +15,31 @@ interface ProductDetailProps {
 }
 
 export function ProductDetail({ product, isOpen, onClose }: ProductDetailProps) {
-  const { addToCart } = useStore();
+  const { addToCart, isLineInCart, setCartOpen } = useStore();
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState(product?.colors?.[0] || null);
   const [selectedMaterial, setSelectedMaterial] = useState(product?.materials?.[0] || null);
   const [selectedSize, setSelectedSize] = useState(product?.sizes?.[0] || null);
+  const [justAdded, setJustAdded] = useState(false);
 
   if (!product) return null;
 
   // Update image when color/material selection changes
   const currentImage = selectedColor?.image || selectedMaterial?.image || product.images[selectedImage];
 
+  const lineCustomization = product.customizable
+    ? {
+        color: selectedColor?.name,
+        material: selectedMaterial?.name,
+        size: selectedSize ?? undefined,
+      }
+    : undefined;
+
+  const lineInCart = isLineInCart(product.id, lineCustomization);
+
   const handleAddToCart = () => {
+    if (!product.inStock || lineInCart) return;
     addToCart({
       productId: product.id,
       name: product.name,
@@ -37,6 +51,11 @@ export function ProductDetail({ product, isOpen, onClose }: ProductDetailProps) 
         material: selectedMaterial?.name,
         size: selectedSize,
       } : undefined,
+    });
+    setJustAdded(true);
+    window.setTimeout(() => setJustAdded(false), 1200);
+    toast.success(`${product.name} added to cart!`, {
+      action: { label: 'View Cart', onClick: () => setCartOpen(true) },
     });
     onClose();
   };
@@ -250,11 +269,29 @@ export function ProductDetail({ product, isOpen, onClose }: ProductDetailProps) 
                     {/* Add to Cart Button */}
                     <Button
                       size="lg"
-                      className="w-full"
+                      className={cn(
+                        'w-full transition-all duration-300',
+                        lineInCart
+                          ? 'bg-gray-200 text-gray-600 cursor-not-allowed'
+                          : 'hover:shadow-md hover:scale-[1.01] active:scale-[0.99]',
+                        justAdded && 'ring-4 ring-emerald-400 ring-offset-2',
+                      )}
                       onClick={handleAddToCart}
-                      disabled={!product.inStock}
+                      disabled={!product.inStock || lineInCart}
                     >
-                      {product.inStock ? 'Add to Cart' : 'Out of Stock'}
+                      {lineInCart ? (
+                        <>
+                          <Check className="w-5 h-5 mr-2" />
+                          In cart
+                        </>
+                      ) : product.inStock ? (
+                        <>
+                          <ShoppingCart className="w-5 h-5 mr-2" />
+                          Add to Cart
+                        </>
+                      ) : (
+                        'Out of Stock'
+                      )}
                     </Button>
 
                     {/* Features */}

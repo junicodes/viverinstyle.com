@@ -109,6 +109,169 @@ const isAdminEmail = (email: string): boolean => {
   return ADMIN_EMAILS.includes(email.toLowerCase());
 };
 
+const parseProductDimensions = (dimensions: string | undefined | null): { lengthCm: number; widthCm: number; heightCm: number } | null => {
+  if (!dimensions) return null;
+  const parts = String(dimensions)
+    .split("x")
+    .map((p) => parseFloat(p.trim()))
+    .filter((n) => Number.isFinite(n) && n > 0);
+  if (parts.length < 3) return null;
+  return {
+    lengthCm: parts[0],
+    widthCm: parts[1],
+    heightCm: parts[2],
+  };
+};
+
+/** Australia Post Parcel Post (AUS_PARCEL_REGULAR) longest-side limit — API returns errors above this. */
+const AUSPOST_REGULAR_MAX_LENGTH_CM = 105;
+
+/** Aus Post expects length ≥ width ≥ height for domestic parcel calculator; longest side must fit service limits. */
+function normalizeParcelDimensions(lengthCm: number, widthCm: number, heightCm: number): { lengthCm: number; widthCm: number; heightCm: number } {
+  const sorted = [lengthCm, widthCm, heightCm].sort((a, b) => b - a);
+  return { lengthCm: sorted[0], widthCm: sorted[1], heightCm: sorted[2] };
+}
+
+function ausPostClientErrorMessage(quoteData: unknown): string {
+  if (!quoteData || typeof quoteData !== "object") return "Australia Post quote failed";
+  const d = quoteData as Record<string, unknown>;
+  if (Array.isArray(d.errors) && d.errors.length > 0) {
+    const first = d.errors[0] as Record<string, unknown>;
+    if (typeof first?.message === "string") return first.message;
+  }
+  const err = d.errors as Record<string, unknown> | undefined;
+  if (err?.message) return String(err.message);
+  const nested = d.error as Record<string, unknown> | undefined;
+  if (nested?.errorMessage) return String(nested.errorMessage);
+  if (nested?.message) return String(nested.message);
+  if (typeof d.message === "string") return d.message;
+  return "Australia Post quote failed";
+}
+
+type AusPostSvc = { code: string; name: string; price: number };
+
+function normalizeAusPostServiceList(data: unknown): AusPostSvc[] {
+  if (!data || typeof data !== "object") return [];
+  const svc = (data as Record<string, unknown>).services as Record<string, unknown> | undefined;
+  const raw = svc?.service;
+  if (raw == null) return [];
+  const list = Array.isArray(raw) ? raw : [raw];
+  return list
+    .map((s: unknown) => {
+      const o = s as Record<string, unknown>;
+      return {
+        code: String(o?.code ?? ""),
+        name: String(o?.name ?? ""),
+        price: Number(o?.price),
+      };
+    })
+    .filter((s) => s.code.length > 0 && Number.isFinite(s.price));
+}
+
+/** Prefer standard Parcel Post when within limits; otherwise pick a non-Express option or cheapest. */
+function chooseDomesticService(services: AusPostSvc[], longestSideCm: number): AusPostSvc {
+  if (services.length === 0) {
+    throw new Error("No Australia Post services returned for this parcel.");
+  }
+
+  if (longestSideCm <= AUSPOST_REGULAR_MAX_LENGTH_CM) {
+    const regular = services.find((s) => s.code === "AUS_PARCEL_REGULAR");
+    if (regular) return regular;
+  }
+
+  const nonExpress = services.filter((s) => !/express/i.test(s.name));
+  const pool = nonExpress.length > 0 ? nonExpress : services;
+
+  const parcelLike = pool.find((s) =>
+    /parcel|pack|post|standard|bulk|oversize|large|satchel/i.test(s.name),
+  );
+  if (parcelLike) return parcelLike;
+
+  return pool.reduce((best, s) => (s.price <= best.price ? s : best));
+}
+
+async function ausPostListDomesticServices(
+  pkg: { lengthCm: number; widthCm: number; heightCm: number; weightKg: number },
+  fromPostcode: string,
+  toPostcode: string,
+  apiKey: string,
+): Promise<AusPostSvc[]> {
+  const url = new URL("https://digitalapi.auspost.com.au/postage/parcel/domestic/service.json");
+  url.searchParams.set("from_postcode", fromPostcode);
+  url.searchParams.set("to_postcode", toPostcode);
+  url.searchParams.set("length", String(Math.round(pkg.lengthCm)));
+  url.searchParams.set("width", String(Math.round(pkg.widthCm)));
+  url.searchParams.set("height", String(Math.round(pkg.heightCm)));
+  url.searchParams.set("weight", pkg.weightKg.toFixed(3));
+
+  const res = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      "AUTH-KEY": apiKey,
+      "Accept": "application/json",
+    },
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(ausPostClientErrorMessage(data));
+  }
+  return normalizeAusPostServiceList(data);
+}
+
+async function ausPostCalculateDomestic(
+  pkg: { lengthCm: number; widthCm: number; heightCm: number; weightKg: number },
+  fromPostcode: string,
+  toPostcode: string,
+  serviceCode: string,
+  apiKey: string,
+): Promise<number> {
+  const url = new URL("https://digitalapi.auspost.com.au/postage/parcel/domestic/calculate.json");
+  url.searchParams.set("from_postcode", fromPostcode);
+  url.searchParams.set("to_postcode", toPostcode);
+  url.searchParams.set("length", String(Math.round(pkg.lengthCm)));
+  url.searchParams.set("width", String(Math.round(pkg.widthCm)));
+  url.searchParams.set("height", String(Math.round(pkg.heightCm)));
+  url.searchParams.set("weight", pkg.weightKg.toFixed(3));
+  url.searchParams.set("service_code", serviceCode);
+
+  const res = await fetch(url.toString(), {
+    method: "GET",
+    headers: {
+      "AUTH-KEY": apiKey,
+      "Accept": "application/json",
+    },
+  });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new Error(ausPostClientErrorMessage(data));
+  }
+  const dataObj = data as Record<string, unknown>;
+  const postageResult = dataObj.postage_result as Record<string, unknown> | undefined;
+  const cost = Number(postageResult?.total_cost);
+  if (!Number.isFinite(cost)) {
+    throw new Error("Invalid calculate response from Australia Post");
+  }
+  return cost;
+}
+
+/** PAC rejects many oversize parcels with messages like "The length cannot exceed 105cm." */
+function isAusPostDimensionRejected(message: string): boolean {
+  return /105\s*cm|cannot exceed|length.*exceed|exceeds.*length|maximum.*length|invalid.*dimension/i.test(message);
+}
+
+/**
+ * When Australia Post cannot quote (standard parcel max length 105 cm), use a configurable estimate so checkout still works.
+ * Tune via Supabase secrets: OVERSIZE_FREIGHT_BASE_AUD, OVERSIZE_FREIGHT_PER_KG_AUD, OVERSIZE_FREIGHT_PER_CM_OVER_105_AUD
+ */
+function estimateLargeItemFreightAud(pkg: { lengthCm: number; widthCm: number; heightCm: number; weightKg: number }): number {
+  const base = Number(Deno.env.get("OVERSIZE_FREIGHT_BASE_AUD") || "89");
+  const perKg = Number(Deno.env.get("OVERSIZE_FREIGHT_PER_KG_AUD") || "3.2");
+  const perCmOver = Number(Deno.env.get("OVERSIZE_FREIGHT_PER_CM_OVER_105_AUD") || "1.5");
+  const excessCm = Math.max(0, pkg.lengthCm - AUSPOST_REGULAR_MAX_LENGTH_CM);
+  const raw = base + pkg.weightKg * perKg + excessCm * perCmOver;
+  return Number(Math.max(0, raw).toFixed(2));
+}
+
 // Enable logger
 app.use('*', logger(console.log));
 
@@ -175,6 +338,210 @@ app.get("/make-server-35e920f3/categories/:slug/products", async (c) => {
     return c.json({ success: true, products });
   } catch (error) {
     console.log(`Error fetching products by category: ${error}`);
+    return c.json({ success: false, error: String(error) }, 500);
+  }
+});
+
+// Get shipping quote (Australia Post)
+app.post("/make-server-35e920f3/shipping/quote", async (c) => {
+  try {
+    const { destinationPostcode, items } = await c.req.json();
+
+    if (!destinationPostcode || !/^\d{4}$/.test(String(destinationPostcode))) {
+      return c.json({ success: false, error: "A valid 4-digit destination postcode is required" }, 400);
+    }
+
+    if (!Array.isArray(items) || items.length === 0) {
+      return c.json({ success: false, error: "Cart items are required" }, 400);
+    }
+
+    const AUSPOST_API_KEY = Deno.env.get("AUSPOST_API_KEY");
+    const AUSPOST_FROM_POSTCODE = Deno.env.get("AUSPOST_FROM_POSTCODE") || "5160";
+
+    const allProducts = await kv.getByPrefix("product:");
+    const productMap = new Map(allProducts.map((p: any) => [p.id, p]));
+
+    // Build package list from cart products. Fallback values keep checkout working if some products miss shipping metadata.
+    const packages: Array<{ weightKg: number; lengthCm: number; widthCm: number; heightCm: number }> = [];
+    for (const item of items) {
+      const quantity = Math.max(1, Number(item.quantity || 1));
+      const product = productMap.get(item.productId);
+      const parsedDims = parseProductDimensions(product?.dimensions);
+
+      const weightKg = Number(product?.shippingWeightKg) > 0 ? Number(product.shippingWeightKg) : 10;
+      const rawL = Number(product?.packageLengthCm) > 0
+        ? Number(product.packageLengthCm)
+        : (parsedDims?.lengthCm || 30);
+      const rawW = Number(product?.packageWidthCm) > 0
+        ? Number(product.packageWidthCm)
+        : (parsedDims?.widthCm || 30);
+      const rawH = Number(product?.packageHeightCm) > 0
+        ? Number(product.packageHeightCm)
+        : (parsedDims?.heightCm || 20);
+      const { lengthCm, widthCm, heightCm } = normalizeParcelDimensions(rawL, rawW, rawH);
+
+      for (let i = 0; i < quantity; i++) {
+        packages.push({ weightKg, lengthCm, widthCm, heightCm });
+      }
+    }
+
+    // If AusPost key is missing, return deterministic fallback based on package count and weight.
+    if (!AUSPOST_API_KEY) {
+      const totalWeight = packages.reduce((sum, pkg) => sum + pkg.weightKg, 0);
+      const fallbackTotal = Math.max(0, 12 + packages.length * 6 + totalWeight * 1.8);
+      return c.json({
+        success: true,
+        shipping: {
+          carrier: "Australia Post",
+          service: "Standard Parcel (Estimated)",
+          amount: Number(fallbackTotal.toFixed(2)),
+          currency: "AUD",
+          source: "fallback",
+        },
+      });
+    }
+
+    type BreakdownRow = {
+      parcelIndex: number;
+      longestSideCm: number;
+      serviceCode: string;
+      serviceName: string;
+      amount: number;
+      estimated?: boolean;
+    };
+    const breakdown: BreakdownRow[] = [];
+    let total = 0;
+
+    for (let i = 0; i < packages.length; i++) {
+      const pkg = packages[i];
+      const longestSideCm = Math.round(pkg.lengthCm);
+      const parcelIndex = i + 1;
+
+      const pushOversizeEstimate = () => {
+        const amount = estimateLargeItemFreightAud(pkg);
+        total += amount;
+        breakdown.push({
+          parcelIndex,
+          longestSideCm,
+          serviceCode: "MERCHANT_OVERSIZE_ESTIMATE",
+          serviceName: "Large item delivery (estimate — exceeds Aus Post standard parcel limits)",
+          amount,
+          estimated: true,
+        });
+      };
+
+      let services: AusPostSvc[];
+      try {
+        services = await ausPostListDomesticServices(
+          pkg,
+          AUSPOST_FROM_POSTCODE,
+          String(destinationPostcode),
+          AUSPOST_API_KEY,
+        );
+      } catch (e) {
+        const msg = String(e);
+        if (isAusPostDimensionRejected(msg)) {
+          pushOversizeEstimate();
+          continue;
+        }
+        const isClientValidation = /exceeds|maximum|invalid/i.test(msg);
+        return c.json(
+          {
+            success: false,
+            code: isClientValidation ? "AUSPOST_VALIDATION" : "AUSPOST_UPSTREAM",
+            error: msg,
+          },
+          isClientValidation ? 422 : 502,
+        );
+      }
+
+      if (services.length === 0) {
+        if (Math.round(pkg.lengthCm) > AUSPOST_REGULAR_MAX_LENGTH_CM) {
+          pushOversizeEstimate();
+          continue;
+        }
+        return c.json({
+          success: false,
+          code: "AUSPOST_NO_SERVICE",
+          error:
+            `No Australia Post services are available for parcel ${parcelIndex} of ${packages.length} (longest side ${longestSideCm} cm, weight ${pkg.weightKg} kg). ` +
+            `Adjust package dimensions in admin or contact us for freight.`,
+        }, 422);
+      }
+
+      let chosen: AusPostSvc;
+      try {
+        chosen = chooseDomesticService(services, pkg.lengthCm);
+      } catch (e) {
+        return c.json({ success: false, error: String(e) }, 422);
+      }
+
+      let amount: number;
+      let row: BreakdownRow;
+      try {
+        amount = await ausPostCalculateDomestic(
+          pkg,
+          AUSPOST_FROM_POSTCODE,
+          String(destinationPostcode),
+          chosen.code,
+          AUSPOST_API_KEY,
+        );
+        row = {
+          parcelIndex,
+          longestSideCm,
+          serviceCode: chosen.code,
+          serviceName: chosen.name,
+          amount: Number(amount.toFixed(2)),
+        };
+      } catch (calcErr) {
+        const cmsg = String(calcErr);
+        if (isAusPostDimensionRejected(cmsg)) {
+          pushOversizeEstimate();
+          continue;
+        }
+        amount = chosen.price;
+        row = {
+          parcelIndex,
+          longestSideCm,
+          serviceCode: chosen.code,
+          serviceName: chosen.name,
+          amount: Number(amount.toFixed(2)),
+        };
+      }
+
+      total += row.amount;
+      breakdown.push(row);
+    }
+
+    const uniqueNames = [...new Set(breakdown.map((b) => b.serviceName))];
+    const serviceLabel =
+      packages.length === 1
+        ? (uniqueNames[0] || "Australia Post")
+        : `${packages.length} parcels — ${
+            uniqueNames.length === 1
+              ? uniqueNames[0]
+              : `${uniqueNames.slice(0, 3).join(", ")}${uniqueNames.length > 3 ? "…" : ""}`
+          }`;
+
+    const anyEstimated = breakdown.some((b) => b.estimated);
+    return c.json({
+      success: true,
+      shipping: {
+        carrier: "Australia Post",
+        service: serviceLabel,
+        amount: Number(total.toFixed(2)),
+        currency: "AUD",
+        source: anyEstimated ? "auspost+estimate" : "auspost",
+        parcelCount: packages.length,
+        breakdown,
+        includesEstimate: anyEstimated,
+        estimateNote: anyEstimated
+          ? "Large items include an estimated freight rate (Australia Post standard parcels are limited to 105 cm). Final shipping may be confirmed before dispatch."
+          : undefined,
+      },
+    });
+  } catch (error) {
+    console.log(`Error calculating shipping quote: ${error}`);
     return c.json({ success: false, error: String(error) }, 500);
   }
 });

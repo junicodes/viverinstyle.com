@@ -39,6 +39,10 @@ export const api = {
     return await supabaseApi.getOrder(id);
   },
 
+  getShippingQuote: async (payload: { destinationPostcode: string; items: Array<{ productId: string; quantity: number }> }) => {
+    return await supabaseApi.getShippingQuote(payload);
+  },
+
   // Seed data
   seedDatabase: async (seedData: any) => {
     return await supabaseApi.seedDatabase(seedData);

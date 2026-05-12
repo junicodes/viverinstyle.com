@@ -59,7 +59,10 @@ export default function AddProductForm({ categories, product, onSuccess, onCance
     category: '',
     stock: '1',
     featured: false,
-    shippingCost: '',
+    shippingWeightKg: '',
+    packageLengthCm: '',
+    packageWidthCm: '',
+    packageHeightCm: '',
     width: '',
     height: '',
     depth: '',
@@ -83,7 +86,10 @@ export default function AddProductForm({ categories, product, onSuccess, onCance
         category: product.category || '',
         stock: product.stock?.toString() || '',
         featured: product.featured || false,
-        shippingCost: product.shippingCost?.toString() ?? '',
+        shippingWeightKg: product.shippingWeightKg?.toString() ?? '',
+        packageLengthCm: product.packageLengthCm?.toString() ?? '',
+        packageWidthCm: product.packageWidthCm?.toString() ?? '',
+        packageHeightCm: product.packageHeightCm?.toString() ?? '',
         width: dims[0] || '',
         height: dims[1] || '',
         depth: dims[2] || '',
@@ -280,7 +286,10 @@ export default function AddProductForm({ categories, product, onSuccess, onCance
         dimensions: dimensions || undefined,
         rating: product?.rating ?? 4.5 + Math.random() * 0.4,
         reviews: product?.reviews ?? 0,
-        shippingCost: formData.shippingCost !== '' ? parseFloat(formData.shippingCost) : undefined,
+        shippingWeightKg: formData.shippingWeightKg !== '' ? parseFloat(formData.shippingWeightKg) : undefined,
+        packageLengthCm: formData.packageLengthCm !== '' ? parseFloat(formData.packageLengthCm) : undefined,
+        packageWidthCm: formData.packageWidthCm !== '' ? parseFloat(formData.packageWidthCm) : undefined,
+        packageHeightCm: formData.packageHeightCm !== '' ? parseFloat(formData.packageHeightCm) : undefined,
         videoUrl: formData.videoUrl || undefined,
         materialVariants: formData.materialVariants ? formData.materialVariants.split(',').map(v => v.trim()).filter(Boolean) : undefined,
       };
@@ -483,18 +492,17 @@ export default function AddProductForm({ categories, product, onSuccess, onCance
               </div>
 
               <div>
-                <Label htmlFor="shippingCost" className="text-gray-700 dark:text-gray-300 mb-2 block">
-                  Shipping Cost (AUD)
-                  <span className="text-xs text-gray-500 ml-2 font-normal">(0 = free, blank = use default)</span>
+                <Label htmlFor="shippingWeightKg" className="text-gray-700 dark:text-gray-300 mb-2 block">
+                  Shipping Weight (kg)
                 </Label>
                 <Input
-                  id="shippingCost"
+                  id="shippingWeightKg"
                   type="number"
                   step="0.01"
-                  min="0"
-                  value={formData.shippingCost}
-                  onChange={(e) => setFormData({ ...formData, shippingCost: e.target.value })}
-                  placeholder="Leave blank for default rate"
+                  min="0.01"
+                  value={formData.shippingWeightKg}
+                  onChange={(e) => setFormData({ ...formData, shippingWeightKg: e.target.value })}
+                  placeholder="e.g., 18.5"
                   className="bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-gray-900 dark:focus:border-white"
                 />
               </div>
@@ -543,7 +551,10 @@ export default function AddProductForm({ categories, product, onSuccess, onCance
 
           {/* Dimensions */}
           <div className="bg-gray-50 dark:bg-zinc-900 rounded-lg p-6 border border-gray-200 dark:border-zinc-800">
-            <h2 className="text-xl mb-6 text-gray-900 dark:text-gray-100">Dimensions</h2>
+            <h2 className="text-xl mb-2 text-gray-900 dark:text-gray-100">Dimensions</h2>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mb-6">
+              Checkout uses <strong>package</strong> sizes when set; otherwise product width × height × depth. We request Australia Post rates per parcel: standard Parcel Post is used when offered (typically longest side ≤ 105 cm); larger cartons use another Aus Post product from their API if available. Accurate package data gives the best quote.
+            </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
                 <Label htmlFor="width" className="text-gray-700 dark:text-gray-300 mb-2 block">
@@ -578,6 +589,50 @@ export default function AddProductForm({ categories, product, onSuccess, onCance
                   value={formData.depth}
                   onChange={(e) => setFormData({ ...formData, depth: e.target.value })}
                   placeholder="90"
+                  className="bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-gray-900 dark:focus:border-white"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+              <div>
+                <Label htmlFor="packageLengthCm" className="text-gray-700 dark:text-gray-300 mb-2 block">
+                  Package Length (cm)
+                </Label>
+                <Input
+                  id="packageLengthCm"
+                  type="number"
+                  min="1"
+                  value={formData.packageLengthCm}
+                  onChange={(e) => setFormData({ ...formData, packageLengthCm: e.target.value })}
+                  placeholder="Box length"
+                  className="bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-gray-900 dark:focus:border-white"
+                />
+              </div>
+              <div>
+                <Label htmlFor="packageWidthCm" className="text-gray-700 dark:text-gray-300 mb-2 block">
+                  Package Width (cm)
+                </Label>
+                <Input
+                  id="packageWidthCm"
+                  type="number"
+                  min="1"
+                  value={formData.packageWidthCm}
+                  onChange={(e) => setFormData({ ...formData, packageWidthCm: e.target.value })}
+                  placeholder="Box width"
+                  className="bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-gray-900 dark:focus:border-white"
+                />
+              </div>
+              <div>
+                <Label htmlFor="packageHeightCm" className="text-gray-700 dark:text-gray-300 mb-2 block">
+                  Package Height (cm)
+                </Label>
+                <Input
+                  id="packageHeightCm"
+                  type="number"
+                  min="1"
+                  value={formData.packageHeightCm}
+                  onChange={(e) => setFormData({ ...formData, packageHeightCm: e.target.value })}
+                  placeholder="Box height"
                   className="bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-gray-900 dark:focus:border-white"
                 />
               </div>

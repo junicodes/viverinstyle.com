@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, Star, Heart, ShoppingCart, Truck, Shield, RotateCcw, Check, User } from 'lucide-react';
 import { Button } from '../ui/button';
+import { cn } from '../ui/utils';
 import { toast } from 'sonner@2.0.3';
 import { useStore } from '../../store/useStore';
 import { Textarea } from '../ui/textarea';
@@ -34,6 +35,7 @@ interface Product {
   inStock: boolean;
   features?: string[];
   specifications?: Record<string, string>;
+  materialVariants?: string[];
 }
 
 interface ProductDetailPageProps {
@@ -52,10 +54,19 @@ export function ProductDetailPage({ product, allProducts = [], onBack, onProduct
   const [newReview, setNewReview] = useState({ rating: 5, title: '', comment: '' });
   const [submittingReview, setSubmittingReview] = useState(false);
   
-  const { toggleFavorite, isFavorite, addToCart, setCartOpen, user } = useStore();
+  const { toggleFavorite, isFavorite, addToCart, setCartOpen, user, isLineInCart } = useStore();
   const favorite = isFavorite(product.id);
 
   const images = product.images || [product.image];
+
+  const lineCustomization = useMemo(() => {
+    if (product.materialVariants?.length)
+      return { material: product.materialVariants[selectedVariant] };
+    return undefined;
+  }, [product.materialVariants, selectedVariant]);
+
+  const lineInCart = isLineInCart(product.id, lineCustomization);
+  const [justAdded, setJustAdded] = useState(false);
 
   useEffect(() => {
     // Scroll to top instantly without animation
@@ -82,13 +93,17 @@ export function ProductDetailPage({ product, allProducts = [], onBack, onProduct
   };
 
   const handleAddToCart = () => {
+    if (!isProductInStock(product) || lineInCart) return;
     addToCart({
       productId: product.id,
       name: product.name,
       price: product.price,
       image: images[0],
       quantity,
+      customization: lineCustomization,
     });
+    setJustAdded(true);
+    window.setTimeout(() => setJustAdded(false), 1400);
     toast.success(`${quantity} × ${product.name} added to cart! 🛒`, {
       action: {
         label: 'View Cart',
@@ -397,12 +412,28 @@ export function ProductDetailPage({ product, allProducts = [], onBack, onProduct
             <div className="flex gap-3 sm:gap-4 mb-8">
               <Button
                 onClick={handleAddToCart}
-                disabled={!isProductInStock(product)}
-                className="flex-1 h-12 sm:h-14 text-base sm:text-lg bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200"
+                disabled={!isProductInStock(product) || lineInCart}
+                className={cn(
+                  'flex-1 h-12 sm:h-14 text-base sm:text-lg transition-all duration-300',
+                  lineInCart
+                    ? 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 cursor-not-allowed'
+                    : 'bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 hover:shadow-lg hover:scale-[1.01] active:scale-[0.99]',
+                  justAdded && 'ring-4 ring-emerald-400/80 ring-offset-2 dark:ring-offset-black',
+                )}
               >
-                <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                <span className="hidden sm:inline">{isProductInStock(product) ? 'Add to Cart' : 'Out of Stock'}</span>
-                <span className="sm:hidden">{isProductInStock(product) ? 'Add' : 'Out of Stock'}</span>
+                {lineInCart ? (
+                  <>
+                    <Check className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                    <span className="hidden sm:inline">In cart</span>
+                    <span className="sm:hidden">In cart</span>
+                  </>
+                ) : (
+                  <>
+                    <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                    <span className="hidden sm:inline">{isProductInStock(product) ? 'Add to Cart' : 'Out of Stock'}</span>
+                    <span className="sm:hidden">{isProductInStock(product) ? 'Add' : 'Out of Stock'}</span>
+                  </>
+                )}
               </Button>
               <Button
                 variant="outline"

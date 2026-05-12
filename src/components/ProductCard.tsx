@@ -1,8 +1,9 @@
 import { motion } from 'motion/react';
-import { Star, Heart, ShoppingCart } from 'lucide-react';
+import { Star, Heart, ShoppingCart, Check } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner@2.0.3';
 import { useStore } from '../store/useStore';
+import { cn } from './ui/utils';
 
 interface Product {
   id: string;
@@ -24,8 +25,10 @@ interface ProductCardProps {
 
 export function ProductCard({ product, onClick }: ProductCardProps) {
   const [isHovered, setIsHovered] = useState(false);
-  const { toggleFavorite, isFavorite, addToCart, setCartOpen } = useStore();
+  const { toggleFavorite, isFavorite, addToCart, setCartOpen, isLineInCart } = useStore();
   const favorite = isFavorite(product.id);
+  const inCart = isLineInCart(product.id);
+  const [justAdded, setJustAdded] = useState(false);
 
   const handleToggleFavorite = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -35,6 +38,7 @@ export function ProductCard({ product, onClick }: ProductCardProps) {
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!product.inStock || inCart) return;
     addToCart({
       productId: product.id,
       name: product.name,
@@ -42,6 +46,8 @@ export function ProductCard({ product, onClick }: ProductCardProps) {
       image: product.images?.[0] || product.image,
       quantity: 1,
     });
+    setJustAdded(true);
+    window.setTimeout(() => setJustAdded(false), 1200);
     toast.success(`${product.name} added to cart! 🛒`, {
       action: {
         label: 'View Cart',
@@ -111,11 +117,19 @@ export function ProductCard({ product, onClick }: ProductCardProps) {
               <motion.button
                 initial={{ scale: 0.8 }}
                 animate={{ scale: isHovered ? 1 : 0.8 }}
-                className="bg-black dark:bg-white text-white dark:text-black p-3 rounded-lg hover:bg-gray-800 dark:hover:bg-gray-200 transition"
+                className={cn(
+                  'p-3 rounded-lg transition-all duration-300',
+                  inCart
+                    ? 'bg-emerald-800 text-white cursor-not-allowed opacity-90'
+                    : 'bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-200 hover:scale-105 hover:ring-2 hover:ring-white/90 hover:shadow-lg active:scale-95',
+                  justAdded && 'ring-4 ring-emerald-300 scale-110',
+                  !product.inStock && 'opacity-50 cursor-not-allowed hover:ring-0 hover:scale-100',
+                )}
                 onClick={handleAddToCart}
-                disabled={!product.inStock}
+                disabled={!product.inStock || inCart}
+                title={inCart ? 'Already in cart' : 'Add to cart'}
               >
-                <ShoppingCart className="w-5 h-5" />
+                {inCart ? <Check className="w-5 h-5" strokeWidth={2.5} /> : <ShoppingCart className="w-5 h-5" />}
               </motion.button>
             </div>
           </motion.div>

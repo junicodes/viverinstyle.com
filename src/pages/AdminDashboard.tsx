@@ -111,10 +111,6 @@ export default function AdminDashboard({ onNavigate }: AdminDashboardProps = {})
   const [isAddingPhoto, setIsAddingPhoto] = useState(false);
   const [isAddingTestimonial, setIsAddingTestimonial] = useState(false);
 
-  // Store settings
-  const [defaultShipping, setDefaultShipping] = useState('149');
-  const [savingSettings, setSavingSettings] = useState(false);
-
   // Discount codes
   const [discountCodes, setDiscountCodes] = useState<any[]>([]);
   const [isAddingDiscount, setIsAddingDiscount] = useState(false);
@@ -237,10 +233,9 @@ export default function AdminDashboard({ onNavigate }: AdminDashboardProps = {})
       // Load blog posts
       await loadBlogPosts();
 
-      // Load customer photos, testimonials, store settings, and discounts
+      // Load customer photos, testimonials, and discounts
       await loadCustomerPhotos();
       await loadTestimonials();
-      await loadStoreSettings();
       await loadDiscountCodes();
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -539,32 +534,6 @@ export default function AdminDashboard({ onNavigate }: AdminDashboardProps = {})
       }
     } catch (error) {
       toast.error('Failed to save posts');
-    }
-  };
-
-  const loadStoreSettings = async () => {
-    try {
-      const supabase = getSupabaseClient();
-      const { data } = await supabase.from('kv_store_e9dccf07').select('value').eq('key', 'settings:store').maybeSingle();
-      if (data?.value?.defaultShipping !== undefined) {
-        setDefaultShipping(data.value.defaultShipping.toString());
-      }
-    } catch {}
-  };
-
-  const saveStoreSettings = async () => {
-    try {
-      setSavingSettings(true);
-      const supabase = getSupabaseClient();
-      await supabase.from('kv_store_e9dccf07').upsert({
-        key: 'settings:store',
-        value: { defaultShipping: parseFloat(defaultShipping) || 0 },
-      });
-      toast.success('Shipping settings saved!');
-    } catch {
-      toast.error('Failed to save settings');
-    } finally {
-      setSavingSettings(false);
     }
   };
 
@@ -1714,43 +1683,8 @@ export default function AdminDashboard({ onNavigate }: AdminDashboardProps = {})
             </Card>
           </TabsContent>
 
-          {/* Content Tab - Settings, Customer Photos & Testimonials */}
+          {/* Content Tab - Customer Photos, Testimonials & Discounts */}
           <TabsContent value="content" className="space-y-6">
-            {/* Store Settings */}
-            <Card className="bg-gray-50 dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
-              <CardHeader>
-                <CardTitle className="text-gray-900 dark:text-white">Store Settings</CardTitle>
-                <CardDescription>Global shipping and store configuration</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <Label htmlFor="defaultShipping" className="text-gray-700 dark:text-gray-300 mb-2 block">
-                      Default Shipping Cost (AUD)
-                    </Label>
-                    <Input
-                      id="defaultShipping"
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={defaultShipping}
-                      onChange={(e) => setDefaultShipping(e.target.value)}
-                      placeholder="149"
-                      className="border-gray-300 dark:border-gray-600 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white"
-                    />
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Set to 0 for free shipping globally. Products can override this with their own shipping cost.
-                    </p>
-                  </div>
-                  <div className="flex items-end">
-                    <Button onClick={saveStoreSettings} disabled={savingSettings}>
-                      {savingSettings ? 'Saving...' : 'Save Settings'}
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Discount Codes */}
             <Card className="bg-gray-50 dark:bg-zinc-900 border-gray-200 dark:border-zinc-800">
               <CardHeader>

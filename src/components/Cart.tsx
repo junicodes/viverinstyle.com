@@ -79,14 +79,14 @@ export function Cart() {
                         )}
 
                         <div className="flex items-center gap-2">
-                          <Button variant="outline" size="sm" onClick={() => updateQuantity(item.productId, item.quantity - 1)}>
+                          <Button variant="outline" size="sm" onClick={() => updateQuantity(item.productId, item.quantity - 1, item.customization)}>
                             <Minus className="w-3 h-3" />
                           </Button>
                           <span className="w-8 text-center">{item.quantity}</span>
-                          <Button variant="outline" size="sm" onClick={() => updateQuantity(item.productId, item.quantity + 1)}>
+                          <Button variant="outline" size="sm" onClick={() => updateQuantity(item.productId, item.quantity + 1, item.customization)}>
                             <Plus className="w-3 h-3" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => removeFromCart(item.productId)} className="ml-auto text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950">
+                          <Button variant="ghost" size="sm" onClick={() => removeFromCart(item.productId, item.customization)} className="ml-auto text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950">
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>

@@ -90,14 +90,14 @@ export function CartPanel({ isOpen, onClose, onCheckout }: CartPanelProps) {
                         <div className="flex items-center space-x-3">
                           <div className="flex items-center space-x-2 bg-white rounded-lg border">
                             <button
-                              onClick={() => updateQuantity(item.productId, Math.max(1, item.quantity - 1))}
+                              onClick={() => updateQuantity(item.productId, Math.max(1, item.quantity - 1), item.customization)}
                               className="p-2 hover:bg-gray-100 rounded-l-lg transition"
                             >
                               <Minus className="w-4 h-4" />
                             </button>
                             <span className="px-3">{item.quantity}</span>
                             <button
-                              onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                              onClick={() => updateQuantity(item.productId, item.quantity + 1, item.customization)}
                               className="p-2 hover:bg-gray-100 rounded-r-lg transition"
                             >
                               <Plus className="w-4 h-4" />
@@ -105,7 +105,7 @@ export function CartPanel({ isOpen, onClose, onCheckout }: CartPanelProps) {
                           </div>
 
                           <button
-                            onClick={() => removeFromCart(item.productId)}
+                            onClick={() => removeFromCart(item.productId, item.customization)}
                             className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition"
                           >
                             <Trash2 className="w-4 h-4" />

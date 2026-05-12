@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { Lock, Check, Mail, Download, Truck, Star, ShoppingBag, Tag } from 'lucide-react';
+import { Lock, Check, Mail, Download, Truck, Star, ShoppingBag, Tag, Plus, Minus, Trash2 } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { projectId, publicAnonKey } from '../utils/supabase/info';
 import { toast } from 'sonner@2.0.3';
@@ -53,15 +53,18 @@ function FloatingInput({ label, value, onChange, type = 'text', required = false
 }
 
 export function Checkout({ isOpen, onClose, onProductClick }: CheckoutProps) {
-  const { cart, cartTotal, clearCart, user, accessToken } = useStore();
+  const { cart, cartTotal, clearCart, user, accessToken, updateQuantity, removeFromCart } = useStore();
   const [step, setStep] = useState<'details' | 'payment' | 'complete'>('details');
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderId, setOrderId] = useState('');
   const [discountCode, setDiscountCode] = useState('');
   const [appliedDiscount, setAppliedDiscount] = useState<any>(null);
   const [applyingDiscount, setApplyingDiscount] = useState(false);
-  const [defaultShippingRate, setDefaultShippingRate] = useState(149);
-  const [productShippingMap, setProductShippingMap] = useState<Record<string, number | undefined>>({});
+  const [shippingCost, setShippingCost] = useState(0);
+  const [isShippingLoading, setIsShippingLoading] = useState(false);
+  const [shippingError, setShippingError] = useState<string | null>(null);
+  const [shippingMethodLabel, setShippingMethodLabel] = useState('Australia Post');
+  const [shippingEstimateNote, setShippingEstimateNote] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     email: user?.email || '',
@@ -84,13 +87,6 @@ export function Checkout({ isOpen, onClose, onProductClick }: CheckoutProps) {
 
   const subtotal = cartTotal();
 
-  // Calculate shipping: sum of per-product shipping, or default rate per item
-  const shippingCost = cart.reduce((sum, item) => {
-    const productShipping = productShippingMap[item.productId];
-    if (productShipping !== undefined) return sum + (productShipping * item.quantity);
-    return sum + (defaultShippingRate * item.quantity);
-  }, 0);
-
   const discountAmount = appliedDiscount
     ? appliedDiscount.type === 'percentage'
       ? (subtotal * appliedDiscount.value) / 100
@@ -101,30 +97,55 @@ export function Checkout({ isOpen, onClose, onProductClick }: CheckoutProps) {
   useEffect(() => {
     if (isOpen) {
       window.scrollTo(0, 0);
-      loadShippingData();
+      setShippingCost(0);
+      setShippingError(null);
+      setShippingMethodLabel('Australia Post');
+      setShippingEstimateNote(null);
     }
   }, [isOpen]);
 
-  const loadShippingData = async () => {
-    try {
-      // Load global default shipping
-      const supabase = getSupabaseClient();
-      const { data: settingsData } = await supabase.from('kv_store_e9dccf07').select('value').eq('key', 'settings:store').maybeSingle() as { data: any };
-      if (settingsData?.value?.defaultShipping !== undefined) {
-        setDefaultShippingRate(settingsData.value.defaultShipping);
-      }
+  const loadShippingQuote = async (postcode: string) => {
+    if (!/^\d{4}$/.test(postcode)) {
+      setShippingCost(0);
+      setShippingError(null);
+      setShippingMethodLabel('Australia Post');
+      setShippingEstimateNote(null);
+      return;
+    }
+    if (cart.length === 0) {
+      setShippingCost(0);
+      setShippingError(null);
+      setShippingMethodLabel('Australia Post');
+      setShippingEstimateNote(null);
+      return;
+    }
 
-      // Load product shipping costs
-      const products = await api.getProducts();
-      const map: Record<string, number | undefined> = {};
-      for (const p of products) {
-        if (p.shippingCost !== undefined && p.shippingCost !== null) {
-          map[p.id] = p.shippingCost;
-        }
-      }
-      setProductShippingMap(map);
-    } catch {}
+    setIsShippingLoading(true);
+    try {
+      const shipping = await api.getShippingQuote({
+        destinationPostcode: postcode,
+        items: cart.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+      });
+      setShippingCost(Number(shipping?.amount || 0));
+      setShippingMethodLabel(typeof shipping?.service === 'string' && shipping.service ? shipping.service : 'Australia Post');
+      setShippingEstimateNote(
+        typeof shipping?.estimateNote === 'string' && shipping.estimateNote ? shipping.estimateNote : null,
+      );
+      setShippingError(null);
+    } catch (err: any) {
+      setShippingCost(0);
+      setShippingMethodLabel('Australia Post');
+      setShippingEstimateNote(null);
+      setShippingError(err?.message || 'Unable to calculate shipping');
+    } finally {
+      setIsShippingLoading(false);
+    }
   };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    loadShippingQuote(form.postcode);
+  }, [isOpen, form.postcode, cart]);
 
   const u = (field: string, value: string | boolean) => setForm(prev => ({ ...prev, [field]: value }));
 
@@ -139,6 +160,8 @@ export function Checkout({ isOpen, onClose, onProductClick }: CheckoutProps) {
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) { toast.error('Please enter a valid email'); return; }
     if (!/^\d{4}$/.test(form.postcode)) { toast.error('Please enter a valid 4-digit postcode'); return; }
+    if (isShippingLoading) { toast.error('Calculating shipping, please wait a moment'); return; }
+    if (shippingError) { toast.error('Shipping quote unavailable. Please check postcode and try again.'); return; }
     setStep('payment');
     window.scrollTo(0, 0);
   };
@@ -278,10 +301,20 @@ export function Checkout({ isOpen, onClose, onProductClick }: CheckoutProps) {
                 {/* Shipping */}
                 <section>
                   <h2 className="text-base font-semibold text-gray-900 mb-3">Shipping method</h2>
-                  <div className="px-4 py-3 border border-gray-300 rounded-md bg-gray-50 flex justify-between items-center text-sm">
-                    <span className="text-gray-700">Standard Delivery (5-10 business days)</span>
-                    <span className="font-medium text-gray-900">{shippingCost === 0 ? 'FREE' : `$${shippingCost.toFixed(2)}`}</span>
+                  <div className="px-4 py-3 border border-gray-300 rounded-md bg-gray-50 flex justify-between items-start gap-3 text-sm">
+                    <div className="text-gray-700 min-w-0">
+                      <p className="font-medium text-gray-900">Australia Post</p>
+                      <p className="text-xs text-gray-500 mt-0.5 line-clamp-3" title={shippingMethodLabel}>{shippingMethodLabel}</p>
+                      <p className="text-[11px] text-gray-400 mt-1">Estimated 5–10 business days (varies by service)</p>
+                    </div>
+                    <span className="font-medium text-gray-900 flex-shrink-0">
+                      {isShippingLoading ? 'Calculating...' : shippingCost === 0 ? 'FREE' : `$${shippingCost.toFixed(2)}`}
+                    </span>
                   </div>
+                  {shippingError && <p className="text-xs text-red-600 mt-2">{shippingError}</p>}
+                  {shippingEstimateNote && !shippingError && (
+                    <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 mt-2">{shippingEstimateNote}</p>
+                  )}
                 </section>
 
                 <button type="submit" className="w-full py-4 bg-gray-900 text-white rounded-md text-sm font-medium hover:bg-gray-800 transition-colors">
@@ -294,7 +327,7 @@ export function Checkout({ isOpen, onClose, onProductClick }: CheckoutProps) {
                 <div className="bg-gray-50 rounded-md p-4 text-sm space-y-2 border border-gray-200">
                   <div className="flex justify-between"><span className="text-gray-500">Contact</span><span className="text-gray-900">{form.email}</span></div>
                   <div className="flex justify-between"><span className="text-gray-500">Ship to</span><span className="text-gray-900 text-right">{form.address}, {form.city} {form.state} {form.postcode}</span></div>
-                  <div className="flex justify-between"><span className="text-gray-500">Shipping</span><span className="text-gray-900">{shippingCost === 0 ? 'Free' : `$${shippingCost.toFixed(2)}`} — Standard</span></div>
+                  <div className="flex justify-between gap-2"><span className="text-gray-500 flex-shrink-0">Shipping</span><span className="text-gray-900 text-right text-xs sm:text-sm">{isShippingLoading ? 'Calculating...' : shippingCost === 0 ? 'Free' : `$${shippingCost.toFixed(2)}`} — <span className="line-clamp-2" title={shippingMethodLabel}>{shippingMethodLabel}</span></span></div>
                   <button type="button" onClick={() => { setStep('details'); window.scrollTo(0, 0); }} className="text-blue-600 text-xs hover:underline">Change</button>
                 </div>
 
@@ -343,16 +376,46 @@ export function Checkout({ isOpen, onClose, onProductClick }: CheckoutProps) {
             {/* Cart items */}
             <div className="space-y-4 pb-6">
               {cart.map(item => (
-                <div key={`${item.productId}-${JSON.stringify(item.customization)}`} className="flex gap-4">
-                  <div className="relative flex-shrink-0">
+                <div key={`${item.productId}-${JSON.stringify(item.customization)}`} className="flex gap-3 items-start">
+                  <button
+                    type="button"
+                    onClick={() => onProductClick?.({ id: item.productId })}
+                    className="relative flex-shrink-0 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:ring-offset-2"
+                  >
                     <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-lg border border-gray-200" />
-                    <div className="absolute -top-2 -right-2 bg-gray-500 text-white w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-medium">{item.quantity}</div>
-                  </div>
+                  </button>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 line-clamp-1">{item.name}</p>
                     {item.customization?.material && <p className="text-xs text-gray-500">{item.customization.material}</p>}
+                    <div className="flex items-center gap-1.5 mt-2">
+                      <button
+                        type="button"
+                        aria-label="Decrease quantity"
+                        onClick={() => updateQuantity(item.productId, Math.max(1, item.quantity - 1), item.customization)}
+                        className="p-1.5 rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        <Minus className="w-3.5 h-3.5" />
+                      </button>
+                      <span className="text-sm font-medium w-7 text-center tabular-nums">{item.quantity}</span>
+                      <button
+                        type="button"
+                        aria-label="Increase quantity"
+                        onClick={() => updateQuantity(item.productId, item.quantity + 1, item.customization)}
+                        className="p-1.5 rounded-md border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Remove from cart"
+                        onClick={() => removeFromCart(item.productId, item.customization)}
+                        className="p-1.5 rounded-md text-red-600 hover:bg-red-50 transition-colors ml-1"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
-                  <p className="text-sm font-medium text-gray-900 flex-shrink-0">${(item.price * item.quantity).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                  <p className="text-sm font-medium text-gray-900 flex-shrink-0 pt-0.5">${(item.price * item.quantity).toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                 </div>
               ))}
             </div>
@@ -410,7 +473,7 @@ export function Checkout({ isOpen, onClose, onProductClick }: CheckoutProps) {
               )}
               <div className="flex justify-between">
                 <span className="text-gray-600">Shipping</span>
-                <span className="text-gray-900 font-medium">{shippingCost === 0 ? 'FREE' : `$${shippingCost.toFixed(2)}`}</span>
+                <span className="text-gray-900 font-medium">{isShippingLoading ? 'Calculating...' : shippingCost === 0 ? 'FREE' : `$${shippingCost.toFixed(2)}`}</span>
               </div>
             </div>
 
