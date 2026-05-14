@@ -151,11 +151,11 @@ export function ProductCard({ product, onClick }: ProductCardProps) {
           </p>
 
           {/* Rating */}
-          {product.rating !== undefined && product.reviews !== undefined && (
+          {product.rating !== undefined && Number(product.reviews) > 0 && (
             <div className="flex items-center space-x-1 mb-3">
               <span className="text-yellow-500 text-sm">★</span>
               <span className="text-sm text-gray-600 dark:text-gray-400">
-                {product.rating.toFixed(1)} ({product.reviews} reviews)
+                {product.rating.toFixed(1)} ({Number(product.reviews)} reviews)
               </span>
             </div>
           )}

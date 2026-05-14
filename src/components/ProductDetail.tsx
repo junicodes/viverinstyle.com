@@ -142,13 +142,13 @@ export function ProductDetail({ product, isOpen, onClose }: ProductDetailProps) 
                     <div>
                       <Badge className="mb-2 capitalize">{product.category}</Badge>
                       <h2 className="text-4xl mb-3">{product.name}</h2>
-                      {product.rating !== undefined && product.reviews !== undefined && (
+                      {product.rating !== undefined && Number(product.reviews) > 0 && (
                         <div className="flex items-center gap-3 mb-4">
                           <div className="flex items-center">
                             <span className="text-yellow-500 text-xl">★</span>
                             <span className="ml-1 text-lg">{product.rating.toFixed(1)}</span>
                           </div>
-                          <span className="text-gray-500">({product.reviews} reviews)</span>
+                          <span className="text-gray-500">({Number(product.reviews)} reviews)</span>
                         </div>
                       )}
 

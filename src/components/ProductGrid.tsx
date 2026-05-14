@@ -177,13 +177,13 @@ export function ProductGrid({ products, onProductClick }: ProductGridProps) {
               <h3 className="text-lg mb-2 line-clamp-1">{product.name}</h3>
 
               {/* Rating */}
-              {product.rating !== undefined && product.reviews !== undefined && (
+              {product.rating !== undefined && Number(product.reviews) > 0 && (
                 <div className="flex items-center gap-2 mb-3">
                   <div className="flex items-center">
                     <span className="text-yellow-500 text-sm">★</span>
                     <span className="text-sm ml-1">{product.rating.toFixed(1)}</span>
                   </div>
-                  <span className="text-sm text-gray-500">({product.reviews})</span>
+                  <span className="text-sm text-gray-500">({Number(product.reviews)})</span>
                 </div>
               )}
 

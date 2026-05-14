@@ -25,6 +25,7 @@ interface Review {
 interface Product {
   id: string;
   name: string;
+  slug?: string;
   category: string;
   price: number;
   description: string;
@@ -36,6 +37,13 @@ interface Product {
   features?: string[];
   specifications?: Record<string, string>;
   materialVariants?: string[];
+  /** Display size — string like "120 x 45 x 35" or `{ width, height, depth, unit }` from admin */
+  dimensions?: string | { width?: number; height?: number; depth?: number; unit?: string };
+  material?: string;
+  videoUrl?: string;
+  /** Optional finer classification than category (e.g. Coffee table) */
+  productType?: string;
+  type?: string;
 }
 
 interface ProductDetailPageProps {
@@ -43,6 +51,17 @@ interface ProductDetailPageProps {
   allProducts?: any[];
   onBack: () => void;
   onProductClick?: (product: any) => void;
+}
+
+function formatDimensionsText(dimensions: Product['dimensions']): string {
+  if (!dimensions) return '';
+  if (typeof dimensions === 'string') return dimensions.trim();
+  const parts: string[] = [];
+  if (dimensions.width != null) parts.push(String(dimensions.width));
+  if (dimensions.height != null) parts.push(String(dimensions.height));
+  if (dimensions.depth != null) parts.push(String(dimensions.depth));
+  const unit = dimensions.unit ? ` ${dimensions.unit}` : ' cm';
+  return parts.length ? `${parts.join(' × ')}${unit}` : '';
 }
 
 export function ProductDetailPage({ product, allProducts = [], onBack, onProductClick }: ProductDetailPageProps) {
@@ -183,6 +202,30 @@ export function ProductDetailPage({ product, allProducts = [], onBack, onProduct
 
   const inStock = isProductInStock(product);
 
+  const dimensionsDisplay = formatDimensionsText(product.dimensions);
+  const productTypeDisplay = (product.productType || product.type || '').trim();
+  const specEntries = product.specifications
+    ? Object.entries(product.specifications).filter(([, v]) => v != null && String(v).trim() !== '')
+    : [];
+  const showDetailsBlock =
+    !!dimensionsDisplay ||
+    !!(product.material && String(product.material).trim()) ||
+    !!productTypeDisplay ||
+    specEntries.length > 0;
+
+  /** Prefer live reviews from API; avoid showing catalog placeholder (e.g. 4.7) with 0 reviews */
+  const ratingSummary = useMemo(() => {
+    if (reviews.length > 0) {
+      const avg = reviews.reduce((s, r) => s + r.rating, 0) / reviews.length;
+      return { rating: avg, count: reviews.length };
+    }
+    const n = Number(product.reviews) || 0;
+    if (n > 0 && product.rating !== undefined) {
+      return { rating: product.rating, count: n };
+    }
+    return null;
+  }, [reviews, product.reviews, product.rating]);
+
   return (
     <div className="min-h-screen bg-white dark:bg-black">
       <Helmet>
@@ -254,14 +297,14 @@ export function ProductDetailPage({ product, allProducts = [], onBack, onProduct
             <h1 className="text-4xl md:text-5xl text-gray-900 dark:text-white mb-4">{product.name}</h1>
 
             {/* Rating */}
-            {product.rating !== undefined && product.reviews !== undefined && (
+            {ratingSummary && (
               <div className="flex items-center gap-3 mb-6">
-                {renderStars(product.rating, 'lg')}
+                {renderStars(ratingSummary.rating, 'lg')}
                 <span className="text-lg text-gray-900 dark:text-white font-semibold">
-                  {product.rating.toFixed(1)}
+                  {ratingSummary.rating.toFixed(1)}
                 </span>
                 <span className="text-gray-500 dark:text-gray-400">
-                  ({product.reviews} reviews)
+                  ({ratingSummary.count} {ratingSummary.count === 1 ? 'review' : 'reviews'})
                 </span>
               </div>
             )}
@@ -348,6 +391,46 @@ export function ProductDetailPage({ product, allProducts = [], onBack, onProduct
             <p className="text-gray-700 dark:text-gray-300 mb-8 leading-relaxed">
               {product.description}
             </p>
+
+            {/* Dimensions, type, material & specifications (data from admin / API) */}
+            {showDetailsBlock && (
+              <div className="mb-8 rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/40 overflow-hidden">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-100/80 dark:bg-gray-800/50">
+                  Product details
+                </h3>
+                <dl className="divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+                  {productTypeDisplay && (
+                    <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-1 sm:gap-3 px-4 py-3">
+                      <dt className="text-gray-500 dark:text-gray-400 font-medium">Type</dt>
+                      <dd className="text-gray-900 dark:text-white">{productTypeDisplay}</dd>
+                    </div>
+                  )}
+                  {dimensionsDisplay && (
+                    <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-1 sm:gap-3 px-4 py-3">
+                      <dt className="text-gray-500 dark:text-gray-400 font-medium">Dimensions</dt>
+                      <dd className="text-gray-900 dark:text-white tabular-nums">{dimensionsDisplay}</dd>
+                    </div>
+                  )}
+                  {product.material && String(product.material).trim() && (
+                    <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-1 sm:gap-3 px-4 py-3">
+                      <dt className="text-gray-500 dark:text-gray-400 font-medium">Material</dt>
+                      <dd className="text-gray-900 dark:text-white">{product.material.trim()}</dd>
+                    </div>
+                  )}
+                  {specEntries.map(([key, value]) => (
+                    <div
+                      key={key}
+                      className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-1 sm:gap-3 px-4 py-3"
+                    >
+                      <dt className="text-gray-500 dark:text-gray-400 font-medium capitalize">
+                        {key.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim()}
+                      </dt>
+                      <dd className="text-gray-900 dark:text-white">{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            )}
 
             {/* Video */}
             {product.videoUrl && (
@@ -484,16 +567,16 @@ export function ProductDetailPage({ product, allProducts = [], onBack, onProduct
           <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">Customer Reviews</h2>
 
           {/* Review Summary */}
-          {product.rating !== undefined && product.reviews !== undefined && (
+          {ratingSummary && (
             <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-8 mb-8">
               <div className="flex items-center gap-6">
                 <div className="text-center">
                   <p className="text-5xl font-bold text-gray-900 dark:text-white mb-2">
-                    {product.rating.toFixed(1)}
+                    {ratingSummary.rating.toFixed(1)}
                   </p>
-                  {renderStars(product.rating, 'lg')}
+                  {renderStars(ratingSummary.rating, 'lg')}
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                    Based on {product.reviews} reviews
+                    Based on {ratingSummary.count} {ratingSummary.count === 1 ? 'review' : 'reviews'}
                   </p>
                 </div>
               </div>
